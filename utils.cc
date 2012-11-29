@@ -173,3 +173,71 @@ int NK_property(GMatrix mat, int piece, int k){
     return 1;
 }
 
+// Not consider memory overflow in buff
+int Bat_Write(  string filename, 
+                int filenum, 
+                unsigned char* out_buff, 
+                unsigned long size_each_file
+                ){
+    FILE * fp;
+    int i;
+    char c_filename[128];
+    string filename_full;
+    unsigned char* p_f_buff;
+
+    for(i = 0; i < filenum; i++){
+        sprintf(c_filename, "%s%c%02d", filename.c_str(), '_', i);
+        if(NULL == (fp = fopen(c_filename, "w"))){
+            throw File_can_not_create(c_filename);
+        }
+        p_f_buff = out_buff + i*(size_each_file);
+        fwrite(p_f_buff, size_each_file, 1, fp);
+        fclose(fp);
+    }
+
+    return filenum;
+}
+
+// Not consider memory overflow in buff
+int Bat_Read(   string filename, 
+                string files_index, 
+                unsigned char* in_buff, 
+                unsigned long size_each_file
+                ){
+        stringstream ss_index(files_index);
+        int file_i;
+        int ins = 0;
+        char c_filename[128];
+        FILE* fp;
+
+        while(!ss_index.eof()){
+            ss_index >> file_i;
+            sprintf(c_filename, "%s%c%02d", filename.c_str(), '_', file_i);
+            if(NULL == (fp = fopen(c_filename, "r"))){
+                throw File_not_found(c_filename);
+            }
+            fread(in_buff+ins*size_each_file, size_each_file, 1, fp);
+            ins++;
+            fclose(fp);
+        }
+        return ins;
+}
+
+int Bat_Delete( string filename,
+                string files_index
+        ){
+    stringstream ss_index(files_index);
+    int file_i;
+    int ins = 0;
+    char c_filename[128];
+
+    while(!ss_index.eof()){
+        ss_index >> file_i;
+        sprintf(c_filename, "%s%c%02d", filename.c_str(), '_', file_i);
+        if(remove(c_filename)!=0){
+            printf("Error deleting file");
+        }
+        ins++;
+    }
+    return ins;
+}

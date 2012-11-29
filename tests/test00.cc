@@ -11,6 +11,9 @@ int main(void){
     FILE *fp;
     int list[]={123, 123213, 23432, 123243, 231, 124343};
     int *pl;
+    int i, j;
+    uint64_t elem;
+    string str("10 100 100 10 1 2 4 8");
 
     NOTE(" Test Make_random and Print ");
     NOTE("W = 8");
@@ -23,12 +26,23 @@ int main(void){
     m1.Make_random(4, 5, 32);
     m1.Print(0);
 
+    NOTE("Test Make_from_string");
+    m1.Make_from_string(str, 2, 4, 8);
+    m1.Print();
+
+    NOTE("Test Make_vandermande");
+    m1.Make_vandermonde(8,8,8);
+    m1.Print();
+
     NOTE(" Read from a file ");
     if(NULL == (fp = fopen("matrix.dat","r"))){
         printf("fail to open file\n");
+        return 0;
     }
-    m1.Make_from_file(fp, 24, 11, 8);
+    NOTE("file opened!");
+    m1.Make_from_file(fp, 6, 6, 8);
     m1.Print();
+    fclose(fp);
 
     NOTE(" GMatrix from a list ");
     pl = list;

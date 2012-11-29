@@ -8,9 +8,9 @@ GMatrix::GMatrix(){
 }
 
 /* Create an matrix , Set r, c and resize elems */
-GMatrix::GMatrix(int r, int c, int w){
-    rr = r;
-    cc = c;
+GMatrix::GMatrix(int rows, int cols, int w){
+    rr = rows;
+    cc = cols;
     ww = w;
 
     Resize_matrix();
@@ -19,39 +19,34 @@ GMatrix::GMatrix(int r, int c, int w){
 
 
 /* Set a matrix */
-int GMatrix::Make_from_list(int *p, int r, int c, int w){
+int GMatrix::Make_from_list(int *p, int rows, int cols, int w){
     int i,j;
     int shift;
 
-    rr = r; 
-    cc = c;
+    rr = rows; 
+    cc = cols;
     ww = w;
-    ele8.clear();
-    ele16.clear();
-    ele32.clear();
     Resize_matrix();
 
-    for(i = 0; i < r; i++){
-        for(j = 0; j < c; j++){
-            shift = i*c + j;
+    for(i = 0; i < rows; i++){
+        for(j = 0; j < cols; j++){
+            shift = i*cols + j;
             Set(i, j, *(p+shift));
         }
     }
+    return rows*cols;
 }
 
 /* Set the matrix from a file */
 int GMatrix::Make_from_file(FILE *fp, int rows, int cols, int w){
     int i, j;
-    unsigned int elem;
-    
+    uint32_t elem;
+   
     rr = rows;
     cc = cols;
     ww = w;
-    ele8.clear();
-    ele16.clear();
-    ele32.clear();
     Resize_matrix();
-
+    
     try{
         for(i = 0; i < rows; i++){
             for(j = 0; j < cols; j++){
@@ -63,22 +58,18 @@ int GMatrix::Make_from_file(FILE *fp, int rows, int cols, int w){
         NOTE("Error when set the matrix from a file");
         return 0;
     }
-    return 1;
+
+    return rows*cols;
 }
 
 int GMatrix::Make_from_string(string str, int rows, int cols, int w){
     int i, j;
-    uint64_t ele;
+    uint32_t ele;
     istringstream eles(str, istringstream::in);
 
-    assert(str.length() == (rows*cols));
     rr = rows;
     cc = cols;
     ww = w;
-
-    ele8.clear();
-    ele16.clear();
-    ele32.clear();
     Resize_matrix();
 
     for(i = 0; i < rows; i++){
@@ -88,16 +79,14 @@ int GMatrix::Make_from_string(string str, int rows, int cols, int w){
         }
     }
     
+    return rows*cols;
 }
 
 
 /* Set values of previously allocated matrix to all 0s */
-int GMatrix::Make_zero(int r, int c, int w){
-    ele8.clear();
-    ele16.clear();
-    ele32.clear();
-    this->rr = r;
-    this->cc = c;
+int GMatrix::Make_zero(int rows, int cols, int w){
+    this->rr = rows;
+    this->cc = cols;
     this->ww = w;
 
     return Resize_matrix();
@@ -108,10 +97,6 @@ int GMatrix::Make_identity(int r, int c, int w){
     int i;
 
     assert(r == c);
-    ele8.clear();
-    ele16.clear();
-    ele32.clear();
-    Resize_matrix();
     
     Make_zero(r, c, w);
     for( i = 0; i < r; i++ )
@@ -123,15 +108,12 @@ int GMatrix::Make_identity(int r, int c, int w){
 /* Make a vandermonde matrix */
 int GMatrix::Make_vandermonde(int r, int c, int w){
     int i, j;
-    int k;
+    uint64_t k;
 
-    ele8.clear();
-    ele16.clear();
-    ele32.clear();
-    Resize_matrix();
     this->rr = r;
     this->cc = c;
     this->ww = w;
+    Resize_matrix();
 
     for(j = 0; j < c; j++){
         Set(0, j, 1);
@@ -148,17 +130,13 @@ int GMatrix::Make_vandermonde(int r, int c, int w){
 }
 
 /* Make a r(rows)*c(cols) size random GMatrix matrix */
-int GMatrix::Make_random(int r, int c, int w){
+int GMatrix::Make_random(int rows, int cols, int w){
     int i;
     int rand;
     char *pm;
 
-    ele8.clear();
-    ele16.clear();
-    ele32.clear();
-    Resize_matrix();
-    rr = r;
-    cc = c;
+    rr = rows;
+    cc = cols;
     ww = w;
     Resize_matrix();
 
@@ -190,6 +168,8 @@ int GMatrix::Make_random(int r, int c, int w){
             ERROR("Bad ww");
             
     }
+
+
 }
 
 /* The matrix is empty or not */
@@ -198,7 +178,7 @@ int GMatrix::Empty(){
 }
 
 /* Sets the r,c element of matrix to val */
-void GMatrix::Set( int r, int c, uint64_t val){
+void GMatrix::Set( int r, int c, uint32_t val){
     char *pm;
 
     switch(ww){
@@ -220,7 +200,7 @@ void GMatrix::Set( int r, int c, uint64_t val){
 }
 
 /* Get the element from row r, colomn c */
-uint64_t GMatrix::Get(int r, int c){
+uint32_t GMatrix::Get(int r, int c){
     switch(ww){
         case 8:
             return ele8[r*cc+c];
@@ -239,12 +219,30 @@ int GMatrix::Resize_matrix(){
         switch(ww){
             case 8:
                 ele8.resize(rr*cc, 0);
+                if(!ele16.empty()){
+                    ele16.clear();
+                }
+                if(!ele32.empty()){
+                    ele32.clear();
+                }
                 break;
             case 16:
                 ele16.resize(rr*cc, 0);
+                if(!ele8.empty()){
+                    ele8.clear();
+                }
+                if(!ele32.empty()){
+                    ele32.clear();
+                }
                 break;
             case 32:
                 ele32.resize(rr*cc, 0);
+                if(!ele8.empty()){
+                    ele8.clear();
+                }
+                if(!ele16.empty()){
+                    ele16.clear();
+                }
                 break;
             default:
                 ERROR("Bad ww");

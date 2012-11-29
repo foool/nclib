@@ -59,8 +59,8 @@ class GMatrix{
         int Empty();
 
         /* Set/Get the value of row c , colomn c */
-        void Set(int r, int c, uint64_t val);
-        uint64_t Get(int r, int c);
+        void Set(int r, int c, uint32_t val);
+        uint32_t Get(int r, int c);
 
         /* overwrites the values of matrix with values of m */
         int Copy(GMatrix *mat);
@@ -213,3 +213,21 @@ int NC_decode_file(GMatrix mat_de, FILE **fpp_src, FILE *fp_des);
  * can reconstruct the original data                    *
  * piece : how many rows of matrix mat in a node        */
 int NK_property(GMatrix mat, int piece, int k);
+
+/* Batch to write/read/delete filenums files to/from buffer  *
+ * filename_00, filename_01, ... , filename_filenums         */
+int Bat_Write(string filename, int filenum, unsigned char* out_buff, unsigned long size_each_file);
+int Bat_Read(string filename, string files_index, unsigned char* in_buff, unsigned long size_each_file);
+int Bat_Delete(string filename, string files_index);
+
+//Exception types
+struct File_not_found{
+    const char* filename;
+    File_not_found(const char* filename_):filename(filename_){
+    }
+};
+struct File_can_not_create{
+    const char* filename;
+    File_can_not_create(const char* filename_):filename(filename_){
+    }
+};
