@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
@@ -7,6 +9,26 @@
 #include <sstream>
 
 using namespace std;
+
+class ToStringHelper{
+    std::string myValue;
+    public:
+        ToStringHelper(std::string const& value): myValue(value){
+        
+        }
+        operator std::string() const{
+
+            return myValue;
+        }
+        template <typename T>operator T() const{
+            std::istringstream cvt(myValue);
+            T results;
+            
+            cvt >> results;
+            
+            return results;
+        }
+};
 
 class Config{
     public:
@@ -34,7 +56,8 @@ class Config{
         bool KeyExist(const string key) const;
 
         template<class T> static string T_to_string(const T& t);
-        template<class T> static T string_to_T(const string& s);
+        //template<class T> static T string_to_T(const string& s);
+        ToStringHelper string_to_T(string const& s)const;
 
         static void Trim(string& rstr);
         
@@ -51,6 +74,10 @@ class Config{
             string section;
             Section_not_found(const string& section_ = string()):section(section_){}
         };
+        struct Char_forbidden{
+            string character;
+            Char_forbidden(const string& character_ = string()):character(character_){}
+        };
 };    
 
 
@@ -62,35 +89,40 @@ class Config{
         
         return ost.str();
     }
-
+/*
     template<class T> T Config::string_to_T(const string& s){
         T t;
-
+        bool at_in = false;
+        
+        if(s.find('@') != string::npos){
+            //at_in= true;
+            
+        }
         istringstream ist(s);
         ist >> t;
-        
+
         return t;
     }
-
+*/
     template<class T> T Config::Read(const string& key)const{
         mapci p = consMap.find(key);
         
         if(p == consMap.end()){
+            cout<<"Cann't find key: "<<key<<endl;
             throw Key_not_found(key);
         }
-
-        return string_to_T<T>( p->second );
+        return string_to_T( p->second );
     }
     
     template<class T> T Config::Read(const string& key, const T& value)const{
         mapci p = consMap.find(key);
 
         if(p == consMap.end()){
-            return value;
+            cout<<"Cann't find key: "<<key<<endl;
             throw Key_not_found(key);
         }
-
-        return string_to_T<T>( p->second );
+        
+        return string_to_T( p->second );
     }
 
 
@@ -100,5 +132,15 @@ class Config{
         
         Trim(ckey);
         Trim(cvalue);
+
+        /*check for @, which we used it to replace blank space
+        if(cvalue.find('@') != string::npos){
+            throw Char_forbidden("@ ");
+        }
+        for(int i = 0; i < cvalue.length(); i++){
+            if(cvalue[i] == ' '){
+                cvalue[i] = '@';
+            }
+        }*/
         consMap[ckey] = cvalue;
     }

@@ -1,3 +1,5 @@
+#pragma once
+
 #include "stdlib.h"
 #include "stdint.h"
 #include "stdio.h"
@@ -56,26 +58,26 @@ class GMatrix{
         int Make_random(int r, int c, int w);
 
         /* 1:Empyt -1:Not empty */
-        int Empty();
+        int Empty()const;
 
         /* Set/Get the value of row c , colomn c */
         void Set(int r, int c, uint32_t val);
-        uint32_t Get(int r, int c);
+        uint32_t Get(int r, int c)const;
 
         /* overwrites the values of matrix with values of m */
-        int Copy(GMatrix *mat);
+        int Copy(const GMatrix *&mat);
         
         /* Print the value of the matrix to stdout */
-        void Print(int type = 1);
+        void Print(int type = 1)const;
 
         /* Print the value of the matrix as a string */
-        void Print_as_str();
+        void Print_as_str()const;
 
         /* Inverse the matrix */
         void Inverse();
         
         /* Is full-rank matrix or not? yes:1 ; no:0*/
-        int Is_full();
+        int Is_full()const;
 
         /* swap r1 and r2 */
         void Swap_rows(int r1 , int r2);

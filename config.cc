@@ -73,6 +73,10 @@ void Config::SetDelimiter(const string& delim){
     delimiter = delim;
 }
 
+ToStringHelper Config::string_to_T(string const& s)const{
+    return ToStringHelper(s);
+}
+
 //static
 void Config::Trim( string& str ){  
     static const char whitespace[] = " \n\t\v\r\f";  

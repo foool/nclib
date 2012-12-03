@@ -173,7 +173,7 @@ int GMatrix::Make_random(int rows, int cols, int w){
 }
 
 /* The matrix is empty or not */
-int GMatrix::Empty(){
+int GMatrix::Empty()const{
     return (rr?-1:1);
 }
 
@@ -200,7 +200,7 @@ void GMatrix::Set( int r, int c, uint32_t val){
 }
 
 /* Get the element from row r, colomn c */
-uint32_t GMatrix::Get(int r, int c){
+uint32_t GMatrix::Get(int r, int c)const{
     switch(ww){
         case 8:
             return ele8[r*cc+c];
@@ -254,7 +254,7 @@ int GMatrix::Resize_matrix(){
 }
 
 /* Output the matrix */
-void GMatrix::Print(int type){
+void GMatrix::Print(int type)const{
     int i, j;
     int m[3] = {3, 5, 10};
     int n[3] = {2, 4, 8};
@@ -321,7 +321,7 @@ void GMatrix::Print(int type){
 }
 
 /* Output the matrix as a long string*/
-void GMatrix::Print_as_str(){
+void GMatrix::Print_as_str()const{
     int i,j;
     
     switch(ww){
@@ -353,7 +353,7 @@ void GMatrix::Print_as_str(){
 }
 
 /* overwrites the values of matrix with values of m */
-int GMatrix::Copy(GMatrix *mat){
+int GMatrix::Copy(const GMatrix *&mat){
     rr = mat->rr;
     cc = mat->cc;
     ww = mat->ww;
