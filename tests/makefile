@@ -1,7 +1,7 @@
 CC = g++
 CFLAGS = -g -lpthread -I ..
 
-ALL = matrank conftest battest test00 test01 test02 test03 test04 test05
+ALL = matrank conftest battest test00 test01 test02 test03 test04 test05 test06 test07
 
 all: $(ALL)
 

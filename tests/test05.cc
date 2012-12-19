@@ -53,12 +53,12 @@ int main(int argc, char *argv[]){
     d2[8*n] = '\0';
     NOTE("The source, Coding");
     printf("%s\n", d1);
-    NC_code(mat, d2, d1, 8*k);
+    matrix_coding(mat, d2, d1, 8*k);
     NOTE("After encode, source");
     printf("%s\n",d1);
     NOTE("After encode, Result!");
     printf("%s\n", d2);
-    NC_code(mat_ins, d1, d2, 8*k);
+    matrix_coding(mat_ins, d1, d2, 8*k);
     NOTE("After decode, Result!");
     printf("%s\n", d1);
 
