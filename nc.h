@@ -11,6 +11,7 @@
 #include <iostream>
 #include <assert.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 #include "galois.h"
 
 #define PRT_STR(ss) {fprintf(stdout, "== %s == \n",ss);}
@@ -55,6 +56,7 @@ class GMatrix{
         int Make_zero(int r, int c, int w);
         int Make_identity(int r, int c, int w);
         int Make_vandermonde(int r, int c, int w);
+        int Make_sys_vandermonde(int r, int c, int w);
         int Make_random(int r, int c, int w);
 
         /* 1:Empyt -1:Not empty */
@@ -154,7 +156,7 @@ GMatrix Add( GMatrix m1, GMatrix m2);
 void Add(GMatrix &m3, GMatrix &m1, GMatrix &m2);
 
 /* Copy dst_mat from src_mat */
-void Copy(GMatrix &dst_mat, GMatrix &src_mat);
+void Copy(GMatrix &dst_mat, const GMatrix &src_mat);
         
 /* Return the rank of a matrix */
 int Rank(GMatrix mat);
@@ -175,6 +177,10 @@ GMatrix Transpose(GMatrix mat);
 /* Drag a matrix from the matrix with rows from begin to end */
 GMatrix Slice_matrix(GMatrix mat, int begin, int len); 
 
+/* Get len rows from mat */
+GMatrix Draw_rows(const GMatrix& mat, const vector<int>& row_list, const int& len);
+GMatrix Draw_rows(const GMatrix& mat, const int * row_list, const int& len);
+GMatrix Draw_rows(const GMatrix& mat, const string& row_list, const int& len);
 
 /**************
  ** utils.cc **
@@ -190,13 +196,21 @@ double dt_ms(struct timeval end,struct timeval start);
 
 double dt_us(struct timeval end,struct timeval start);
 
+void mem_print(unsigned char* pc, int len, int breaklen);
+
+int Get_file_len(const string& filename);
+
 /* Encode/Decode the data using GMatrix matrix         *
  * mat is the Encode/Decode matrix                      *
  * p_des store the data after Encode/Decode             *
  * p_src store the data before Encode/Decode            *
  * length represent the length of the data to deal with *
  * p_des and p_src must be long-word aligned            */
-int NC_code(GMatrix mat, unsigned char *p_des, unsigned char *p_src, int length);
+int matrix_coding(  GMatrix mat, 
+                    unsigned char *p_des, 
+                    unsigned char *p_src, 
+                    int length
+                    );
 
 DLLEXPORT int NC_code_py(char * mat_c_p, int r, int c, int w, char *p_des, char *p_src, int length);
 
@@ -218,9 +232,51 @@ int NK_property(GMatrix mat, int piece, int k);
 
 /* Batch to write/read/delete filenums files to/from buffer  *
  * filename_00, filename_01, ... , filename_filenums         */
-int Bat_Write(string filename, int filenum, unsigned char* out_buff, unsigned long size_each_file);
-int Bat_Read(string filename, string files_index, unsigned char* in_buff, unsigned long size_each_file);
-int Bat_Delete(string filename, string files_index);
+int Bat_Write(  const string& filename, 
+                const int& filenum, 
+                unsigned char* out_buff, 
+                const unsigned long& size_each_file, 
+                const string& filepath
+                );
+int Bat_Write(  const string& filename, 
+                const vector<int>& files_idx_list, 
+                unsigned char * out_buff, 
+                const unsigned long& size_each_file, 
+                const string& filepath
+                );
+int Bat_Read(   const string& filename, 
+                const vector<int>& files_idx_list,
+                unsigned char * in_buff, 
+                const unsigned long& size_each_file
+                );
+int Bat_Read(   string filename, 
+                string files_index, 
+                unsigned char* in_buff, 
+                unsigned long size_each_file
+                );
+int Bat_Delete( const string& filename, 
+                const vector<int>& files_idx_list
+                );
+int Bat_Delete( string filename, 
+                string files_index
+                );
+
+/* read/write from/to single file(string filename)*/
+void fsread_buff(   const string& filename, 
+                    unsigned char* p_buff, 
+                    const unsigned long& len
+                    );
+
+void fswrite_buff(  const string& filename, 
+                    unsigned char* p_buff, 
+                    const unsigned long& len
+                    );
+void fswrite_buff(  const string& filename, 
+                    const int num , 
+                    unsigned char *p_buff , 
+                    const long& len
+                    );
+
 
 //Exception types
 struct File_not_found{
@@ -233,3 +289,16 @@ struct File_can_not_create{
     File_can_not_create(const char* filename_):filename(filename_){
     }
 };
+
+template <class T>
+T Get_fixsize(T size , int fixnum){
+    T ret;
+    
+    if(0 == (size%fixnum)){
+        ret = size;
+    }else{
+        ret = (size/fixnum+1)*fixnum;
+    }
+
+    return size;
+}

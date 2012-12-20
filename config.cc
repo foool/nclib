@@ -85,6 +85,12 @@ void Config::Trim( string& str ){
     str.erase(str.find_last_not_of(whitespace)+1);  
 }
 
+bool Config::KeyExist( const string& key ) const  {   
+    mapci p = consMap.find( key );  
+    
+    return ( p != consMap.end() );  
+}
+
 bool Config::FileExist(string filename){
     bool exist = false;
 

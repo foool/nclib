@@ -5,6 +5,7 @@
 GMatrix::GMatrix(){
     rr = 0;
     cc = 0;
+    ww = 8;
 }
 
 /* Create an matrix , Set r, c and resize elems */
@@ -98,7 +99,11 @@ int GMatrix::Make_identity(int r, int c, int w){
 
     assert(r == c);
     
-    Make_zero(r, c, w);
+    this->rr = r;
+    this->cc = c;
+    this->ww = w;
+    Resize_matrix();
+    
     for( i = 0; i < r; i++ )
         Set(i, i, 1);
     
@@ -108,7 +113,7 @@ int GMatrix::Make_identity(int r, int c, int w){
 /* Make a vandermonde matrix */
 int GMatrix::Make_vandermonde(int r, int c, int w){
     int i, j;
-    uint64_t k;
+    uint64_t val;
 
     this->rr = r;
     this->cc = c;
@@ -119,15 +124,44 @@ int GMatrix::Make_vandermonde(int r, int c, int w){
         Set(0, j, 1);
     }
     for(i = 1; i < r; i++){
-        k = 1;
+        val = 1;
         for(j = 0; j < c; j++){
-            Set(i, j, k);
-            k = galois_single_multiply(k, i+1, w);
+            Set(i, j, val);
+            val = galois_single_multiply(val, i+1, w);
         }
     }
 
-    return 1;
+    return r;
 }
+
+/* Make a vandermonde matrix with systematic part */
+int GMatrix::Make_sys_vandermonde(int r, int c, int w){
+    int i, j;
+    uint64_t val;
+    int ins;
+
+    Make_identity(c, c, w);
+    this->rr = r;
+    this->cc = c;
+    this->ww = w;
+    Resize_matrix();
+
+    for(j = 0; j < c; j++){
+        Set(c, j, 1);
+    }
+    ins = 1;
+    for(i = c+1; i < r; i++){
+        val = 1;
+        ++ins;
+        for(j = 0; j < c; j++){
+            Set(i, j, val);
+            val = galois_single_multiply(val, ins, w);
+        }
+    }
+
+    return r;
+}
+
 
 /* Make a r(rows)*c(cols) size random GMatrix matrix */
 int GMatrix::Make_random(int rows, int cols, int w){
@@ -169,12 +203,12 @@ int GMatrix::Make_random(int rows, int cols, int w){
             
     }
 
-
+    return rows;
 }
 
 /* The matrix is empty or not */
 int GMatrix::Empty()const{
-    return (rr?-1:1);
+    return ((rr>0)?-1:1);
 }
 
 /* Sets the r,c element of matrix to val */
@@ -219,30 +253,30 @@ int GMatrix::Resize_matrix(){
         switch(ww){
             case 8:
                 ele8.resize(rr*cc, 0);
-                if(!ele16.empty()){
+                //if(!ele16.empty()){
                     ele16.clear();
-                }
-                if(!ele32.empty()){
+                //}
+                //if(!ele32.empty()){
                     ele32.clear();
-                }
+                //}
                 break;
             case 16:
                 ele16.resize(rr*cc, 0);
-                if(!ele8.empty()){
+                //if(!ele8.empty()){
                     ele8.clear();
-                }
-                if(!ele32.empty()){
+                //}
+                //if(!ele32.empty()){
                     ele32.clear();
-                }
+                //}
                 break;
             case 32:
                 ele32.resize(rr*cc, 0);
-                if(!ele8.empty()){
+                //if(!ele8.empty()){
                     ele8.clear();
-                }
-                if(!ele16.empty()){
+                //}
+                //if(!ele16.empty()){
                     ele16.clear();
-                }
+                //}
                 break;
             default:
                 ERROR("Bad ww");
@@ -520,7 +554,6 @@ void GMatrix::Del_row(int row){
 /* Delete lens rows from the begin*/
 void GMatrix::Del_rows(int begin, int len){
     int i;
-    int rows;
 
     assert((begin >= 0)&&(begin < rr));
     assert(len > 0);
@@ -671,12 +704,13 @@ void GMatrix::Append_matrix(GMatrix mat_app){
     int i, j;
     int end;
 
+    printf("in test");
+    NOTE("in test");
     assert(mat_app.cc == cc);
-    
     end = rr;
     rr = rr + mat_app.rr;
     Resize_matrix();
-
+    
     for(i = 0; i < mat_app.rr; i++){
         for(j = 0; j < cc; j++){
             Set(end + i, j, mat_app.Get(i, j));
@@ -815,6 +849,8 @@ int Prod(GMatrix mat, int row, unsigned char *p_des, unsigned char *p_src, int l
     for(i = 0; i < mat.cc; i++){       
         galois_w08_region_multiply(p_src+i*round, mat.Get(row,i), round, p_des, 1);
     }
+
+    return mat.rr;
 }
 
 
@@ -849,6 +885,8 @@ int Prod( GMatrix *m3 , GMatrix *m1 , GMatrix *m2){
             }
         }
     }
+
+    return m3->rr;
 }
 
 
@@ -1023,6 +1061,8 @@ int Is_full(GMatrix mat){
 /* Inversion of a matrix */
 int Inverse( GMatrix &dst_mat , GMatrix &src_mat){
     dst_mat = Inverse(src_mat);
+    
+    return dst_mat.rr;
 }
 
 GMatrix Inverse(GMatrix mat){
@@ -1114,7 +1154,7 @@ GMatrix Transpose(GMatrix mat){
 
 
 /* Copy matrix src_mat -> dst_mat*/
-void Copy( GMatrix &dst_mat , GMatrix &src_mat ){
+void Copy( GMatrix& dst_mat , const GMatrix &src_mat ){
     int ww;
     
     dst_mat.rr = src_mat.rr;
@@ -1159,7 +1199,7 @@ void Copy(GMatrix *dst_mat, GMatrix *src_mat){
 /* Draw a matrix with len rows from begin-th row of the matrix  */
 GMatrix Slice_matrix(GMatrix mat, int begin, int len){
     GMatrix ret;
-    int i, j;
+    int i;
     int col;
 
     assert(begin >= 0);
@@ -1191,3 +1231,90 @@ GMatrix Slice_matrix(GMatrix mat, int begin, int len){
     
     return ret;
 }
+
+/* Get len rows from mat */
+GMatrix Draw_rows(const GMatrix& mat, const vector<int>& row_list, const int& len){
+    GMatrix ret;
+    int i, j;
+    
+    assert(mat.rr > len);
+    Copy(ret, mat);
+
+    for(i = mat.rr-1; i >= 0; --i){
+        bool isin = false;
+        for(j = len-1; j >= 0; --j){
+            if(row_list[j] == i){
+                isin = true;
+            }
+        }
+        if(isin){
+            continue;
+        }else{
+            ret.Del_row(i);
+        }
+    }
+    
+    return ret;
+}
+
+/* Get len rows from mat */
+GMatrix Draw_rows(const GMatrix& mat, const int * row_list, const int& len){
+    GMatrix ret;
+    int i, j;
+    
+    assert(mat.rr > len);
+    Copy(ret, mat);
+
+    for(i = mat.rr-1; i >= 0; --i){
+        bool isin = false;
+        for(j = len-1; j >= 0; --j){
+            if(row_list[j] == i){
+                isin = true;
+            }
+        }
+        if(isin){
+            continue;
+        }else{
+            ret.Del_row(i);
+        }
+    }
+    
+    return ret;
+}
+
+/* Get len rows from mat */
+GMatrix Draw_rows(const GMatrix& mat, const string& row_list, const int& len){
+    GMatrix ret;
+    int i, j;
+    int * lst;
+    int ic = 0;
+    
+    assert(mat.rr > len);
+    Copy(ret, mat);
+    lst = (int *)malloc(100*sizeof(int));
+    
+    stringstream ss(row_list);
+    while(!ss.eof()){
+        ss >> lst[ic]; 
+        ++ic;
+    }
+
+    for(i = mat.rr-1; i >= 0; --i){
+        bool isin = false;
+        for(j = len-1; j >= 0; --j){
+            if(lst[j] == i){
+                isin = true;
+            }
+        }
+        if(isin){
+            continue;
+        }else{
+            ret.Del_row(i);
+        }
+    }
+    free(lst);
+
+    return ret;
+}
+
+

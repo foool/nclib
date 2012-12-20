@@ -29,24 +29,43 @@ int main(void){
     
     // Encode
     NOTE("Begin to encode file !"); 
+    printf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
     rs.Encode();
 
 
     // Decode
     NOTE("Begin to decode files !");
+    printf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
     string files_idx("0 2");
     rs.SetDepath("./", "./decoded/");
     rs.Decode(files_idx);
 
     // S repair
     remove("test.txt_00");
+    printf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
     rs.Repair(0);
     
     // P repair
     remove("test.txt_02");
+    printf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
     rs.Repair(2);
 
     // Q repair
     remove("test.txt_03");
+    printf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
     rs.Repair(3);
+    
+    // S + Q repair
+    remove("test.txt_01");
+    remove("test.txt_03");
+    printf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+    cout<<"Repair node 1 and node 3!"<<endl;
+    rs.Repair("1 3");
+
+    // S + S repair
+    remove("test.txt_00");
+    remove("test.txt_01"); 
+    printf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+    cout<<"Repair node 0 and node 1!"<<endl;
+    rs.Repair("0 1");
 }

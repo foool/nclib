@@ -27,6 +27,30 @@ double dt_us(struct timeval end,struct timeval start){
     return tu;
 }
 
+void mem_print(unsigned char* pc, int len, int breaklen){
+    for(int i = 0; i < len; i++){
+        printf("%d", *(pc+i));
+        if(((i+1)%breaklen)== 0){
+            printf("\n");
+        }
+    }
+    printf("\n");
+}
+
+int Get_file_len(const string& filename){
+    struct stat file_info;
+    char filename_f[128];
+    FILE *fp;
+
+    sprintf(filename_f , "%s" , filename.c_str());
+    if((fp = fopen(filename_f , "r"))){
+        fclose(fp);
+        stat(filename_f, &file_info);
+        return file_info.st_size;
+    }else{
+        throw File_not_found(filename.c_str());
+    }
+}
 
 /* Encode/Decode the data using GMatrix matrix         *
  * mat is the Encode/Decode matrix                      *
@@ -34,53 +58,53 @@ double dt_us(struct timeval end,struct timeval start){
  * p_src store the data before Encode/Decode            *
  * length represent the length of the data to deal with *
  * p_des, p_src must be long-word aligned               */
-int NC_code(GMatrix mat, unsigned char *p_des, unsigned char *p_src, int length){
-    int n, k, w, bpw;
-    int i, j, ii;
-    int if_add;
-    uint8_t mres;
-    unsigned char *pd, *ps, *pdes;
+int matrix_coding(GMatrix mat, unsigned char *p_des, unsigned char *p_src, int length){
+    int n, k, w;
+    int i, j;
     int len_seg;
+    unsigned char *pdes = p_des;
+    unsigned char *psrc = p_src;
 
     k = mat.cc;
     n = mat.rr;
     w = mat.ww;
-    bpw = w/8;
 
     assert(length%mat.cc == 0);
     
     len_seg = length/k;
-    memset(p_des, 0, length*n/k);
+    memset(pdes, 0, length*n/k);
 
     switch(w){
         case 8:
             for(i = 0; i < n; i++){
                 for(j = 0; j < k; j++){
-                    galois_w08_region_multiply(p_src+j*len_seg, 
-                            mat.Get(i,j), len_seg, p_des, 1);    
+                    galois_w08_region_multiply(psrc+j*len_seg, 
+                            mat.Get(i,j), len_seg, pdes, 1);    
                 }
-                p_des = p_des + len_seg;
+                pdes = pdes + len_seg;
             }
             break;
         case 16:
             for(i = 0; i < n; i++){
                 for(j = 0; j < k; j++){
-                    galois_w16_region_multiply(p_src+j*len_seg, 
-                            mat.Get(i,j), len_seg, p_des, 1);    
+                    galois_w16_region_multiply(psrc+j*len_seg, 
+                            mat.Get(i,j), len_seg, pdes, 1);    
                 }
-                p_des = p_des + len_seg;
+                pdes = pdes + len_seg;
             }
             break;
         case 32:
             for(i = 0; i < n; i++){
                 for(j = 0; j < k; j++){
-                    galois_w32_region_multiply(p_src+j*len_seg, 
-                            mat.Get(i,j), len_seg, p_des, 1);    
+                    galois_w32_region_multiply(psrc+j*len_seg, 
+                            mat.Get(i,j), len_seg, pdes, 1);    
                 }
-                p_des = p_des + len_seg;
+                pdes = pdes + len_seg;
             }
             break;
     }
+
+    return mat.rr;
 }
 
 DLLEXPORT int NC_code_py(char *mat_c_p, int r, int c, int w, char *p_des, char *p_src, int length){
@@ -89,7 +113,7 @@ DLLEXPORT int NC_code_py(char *mat_c_p, int r, int c, int w, char *p_des, char *
     
     mat_i_p = (int *)mat_c_p;
     mat.Make_from_list(mat_i_p, r, c, w);
-    NC_code(mat, (unsigned char *)p_des, (unsigned char *)p_src, length);
+    matrix_coding(mat, (unsigned char *)p_des, (unsigned char *)p_src, length);
     return 1;
 }
 
@@ -114,10 +138,9 @@ int NC_decode_file(GMatrix mat_de, FILE **fpp_src, FILE *fp_des){
  * can reconstruct the original data                    *
  * piece : how many rows of matrix mat in a node        */
 int NK_property(GMatrix mat, int piece, int k){
-    int i, j;
+    int i;
     int n;
     int rank;
-    int count = 0;
     int a[100];
     int cur;
     GMatrix mat_chk;
@@ -174,23 +197,26 @@ int NK_property(GMatrix mat, int piece, int k){
 }
 
 // Not consider memory overflow in buff
-int Bat_Write(  string filename, 
-                int filenum, 
+int Bat_Write(  const string& filename, 
+                const int& filenum, 
                 unsigned char* out_buff, 
-                unsigned long size_each_file
+                const unsigned long& size_each_file,
+                const string& filepath
                 ){
     FILE * fp;
     int i;
     char c_filename[128];
     string filename_full;
     unsigned char* p_f_buff;
-
+    
+    filename_full = filepath+filename;
     for(i = 0; i < filenum; i++){
-        sprintf(c_filename, "%s%c%02d", filename.c_str(), '_', i);
+        sprintf(c_filename, "%s%c%02d", filename_full.c_str(), '_', i);
         if(NULL == (fp = fopen(c_filename, "w"))){
             throw File_can_not_create(c_filename);
         }
-        p_f_buff = out_buff + i*(size_each_file);
+        p_f_buff = out_buff;
+        p_f_buff = p_f_buff  + i*size_each_file;
         fwrite(p_f_buff, size_each_file, 1, fp);
         fclose(fp);
     }
@@ -198,6 +224,52 @@ int Bat_Write(  string filename,
     return filenum;
 }
 
+int Bat_Write(  const string& filename,
+                const vector<int>& files_idx_list,
+                unsigned char * out_buff,
+                const unsigned long& size_each_file,
+                const string& filepath
+            ){
+    FILE *fp;
+    int amount_files = files_idx_list.size();
+    char c_filename[128];
+    unsigned char* p_f_buff = out_buff;
+
+    for(int i = 0 ; i < amount_files ; ++i){
+        sprintf(c_filename , "%s%c%02d" , (filepath+filename).c_str() , '_' , files_idx_list.at(i));    
+        if(NULL == (fp = fopen(c_filename , "w"))){
+            throw File_not_found(c_filename);
+        }
+        p_f_buff = p_f_buff + i*size_each_file;
+        fclose(fp);
+    }
+
+    return amount_files;
+}
+
+int Bat_Read(   const string& filename,
+                const vector<int>& files_idx_list,
+                unsigned char * in_buff,
+                const unsigned long& size_each_file
+            ){
+    FILE *fp;
+    int amount_files = files_idx_list.size();
+    char c_filename[128];
+
+    for(int i = 0 ; i < amount_files ; ++i){
+        sprintf(c_filename , "%s%c%02d" , filename.c_str() , '_' , files_idx_list.at(i));    
+    
+        if(NULL == (fp = fopen(c_filename , "r"))){
+            throw File_not_found(c_filename);
+        }
+        fread(in_buff + i*size_each_file , size_each_file , 1 , fp);
+        fclose(fp);
+    }
+
+    return amount_files;
+}
+
+// Deprecated
 // Not consider memory overflow in buff
 int Bat_Read(   string filename, 
                 string files_index, 
@@ -222,10 +294,9 @@ int Bat_Read(   string filename,
         }
         return ins;
 }
-
 int Bat_Delete( string filename,
                 string files_index
-        ){
+                ){
     stringstream ss_index(files_index);
     int file_i;
     int ins = 0;
@@ -240,4 +311,63 @@ int Bat_Delete( string filename,
         ins++;
     }
     return ins;
+}
+
+
+int Bat_Delete( const string& filename,
+                const vector<int>& files_idx_list
+        ){
+    int amount_files = files_idx_list.size();
+    char c_filename[128];
+
+    for(int i = 0 ; i < amount_files ; ++i){
+        sprintf(c_filename, "%s%c%02d", filename.c_str(), '_', files_idx_list.at(i));
+        if(remove(c_filename)!=0){
+            printf("Error deleting file");
+        }
+    }
+
+    return amount_files;
+}
+
+void fsread_buff(const string& filename, unsigned char* p_buff, const unsigned long& len){
+    FILE *fp;
+    unsigned char * pb = p_buff;
+    char filename_[128];
+    
+    sprintf(filename_ , "%s" , filename.c_str());
+    if(NULL != (fp = fopen(filename_ , "r"))){
+        fread(pb , len , 1 , fp);
+        fclose(fp);
+    }else{
+        throw File_not_found(filename_);
+    }
+}
+
+void fswrite_buff(const string& filename, unsigned char* p_buff, const unsigned long& len){
+    FILE *fp;
+    unsigned char * pb = p_buff;
+    char filename_[128];
+    
+    sprintf(filename_ , "%s" , filename.c_str());
+    if(NULL != (fp = fopen(filename_ , "w"))){
+        fwrite(pb , len , 1 , fp);
+        fclose(fp);
+    }else{
+        throw File_not_found(filename_);
+    }
+}
+
+void fswrite_buff(const string& filename, const int num , unsigned char *p_buff , const long& len){
+    FILE *fp;
+    unsigned char *pb = p_buff;
+    char filename_[128];
+
+    sprintf(filename_ , "%s%c%02d" , filename.c_str() , '_' , num);
+    if(NULL != (fp = fopen(filename_ , "w"))){
+        fwrite(pb , len , 1 , fp);
+        fclose(fp);
+    }else{
+        throw File_not_found(filename_);
+    }
 }

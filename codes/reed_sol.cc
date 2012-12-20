@@ -323,7 +323,7 @@ int Reed_Sol::Repair( string fnodes )const{
     }else{
         // More than one failure
         if((fnodes_list.at(1) > this->mat.cc)&&(fnodes_list.at(0) < this->mat.cc)){
-            // a S failure and P is OK
+            // with a S failure and P is OK
             Repair(fnodes_list.at(0));
             fnodes_list.erase(fnodes_list.begin());
 
@@ -336,14 +336,47 @@ int Reed_Sol::Repair( string fnodes )const{
                 vec_k.push_back(i);
             }
             Bat_Read(this->de_from_filepath + this->filename , vec_k , in_buff , size_each_file);
+            NOTE("In_buff");
             mem_print(in_buff, size_in_buff, size_each_file);
             memset(out_buff, 0, size_out_buff);
-            GMatrix mat_en = Draw_rows(this->mat , vec_k , amount_failures);
+            GMatrix mat_en = Draw_rows(this->mat , fnodes_list , amount_failures);
             matrix_coding(mat_en , out_buff , in_buff , size_in_buff);
-            
+            Bat_Write(this->filename, fnodes_list , out_buff , size_out_buff, this->de_from_filepath);
+            NOTE("out_buff S+Q");
+            mem_print(out_buff, size_out_buff, size_each_file);
             free(out_buff);
         }else{
             // normal method
+            NOTE("normal repair");
+            amount_failures = fnodes_list.size();
+            GMatrix mat_fnodes = Draw_rows(this->mat, fnodes_list, amount_failures);
+
+            // live nodes list
+            vector<int> live_nodes;
+            for(int i = 0; i < mat.rr; ++i){
+                live_nodes.push_back(i);
+            }
+            for(int i = 0; i < amount_failures; ++i){
+                live_nodes.erase(fnodes_list.begin()+i);
+            }
+            GMatrix mat_live = Draw_rows(this->mat, live_nodes, mat.cc);
+            NOTE("mat_live");
+            mat_live.Print();
+            GMatrix mat_live_inv = Inverse(mat_live);
+            NOTE("mat_live_inv");
+            mat_live_inv.Print();
+            GMatrix mat_rpr = Prod(mat_fnodes , mat_live_inv);
+
+            // out_buff
+            size_out_buff = amount_failures*size_each_file;
+            out_buff = (unsigned char *)malloc(size_out_buff);
+            memset(out_buff, 0, size_out_buff);
+            Bat_Read(this->de_from_filepath + this->filename, live_nodes, in_buff, size_each_file);
+            matrix_coding(mat_rpr, out_buff, in_buff, size_in_buff);
+            Bat_Write(this->filename, fnodes_list , out_buff , size_out_buff, this->de_from_filepath);
+            NOTE("out_buff");
+            mem_print(out_buff, size_out_buff, size_each_file);
+            free(out_buff);
         }
     }
     

@@ -53,7 +53,7 @@ class Config{
         void SetDelimiter(const string& delim);
 
         bool FileExist(string filename);
-        bool KeyExist(const string key) const;
+        bool KeyExist(const string& key) const;
 
         template<class T> static string T_to_string(const T& t);
         //template<class T> static T string_to_T(const string& s);
