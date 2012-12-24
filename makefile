@@ -14,4 +14,4 @@ config.o: config.h
 galois.o: galois.h
 nc.o: nc.h galois.h
 libnc.so:
-	$(CC) -fPIC t03.cc -o libnc.so -shared config.o galois.o gmatrix.o utils.o
+	$(CC) -fPIC -o libnc.so -shared config.o galois.o gmatrix.o utils.o
