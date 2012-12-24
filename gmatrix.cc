@@ -164,7 +164,7 @@ int GMatrix::Make_sys_vandermonde(int r, int c, int w){
 
 
 /* Make a r(rows)*c(cols) size random GMatrix matrix */
-int GMatrix::Make_random(int rows, int cols, int w){
+int GMatrix::Make_random(const int& rows, const int& cols, const int& w){
     int i;
     int rand;
     char *pm;
@@ -207,8 +207,8 @@ int GMatrix::Make_random(int rows, int cols, int w){
 }
 
 /* The matrix is empty or not */
-int GMatrix::Empty()const{
-    return ((rr>0)?-1:1);
+bool GMatrix::Empty()const{
+    return ((rr>0)?false:true);
 }
 
 /* Sets the r,c element of matrix to val */
@@ -1197,7 +1197,7 @@ void Copy(GMatrix *dst_mat, GMatrix *src_mat){
 }
 
 /* Draw a matrix with len rows from begin-th row of the matrix  */
-GMatrix Slice_matrix(GMatrix mat, int begin, int len){
+GMatrix Slice_matrix(const GMatrix& mat, const int& begin, const int& len){
     GMatrix ret;
     int i;
     int col;

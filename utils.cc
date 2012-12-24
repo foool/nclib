@@ -62,6 +62,7 @@ int matrix_coding(GMatrix mat, unsigned char *p_des, unsigned char *p_src, int l
     int n, k, w;
     int i, j;
     int len_seg;
+    unsigned int muper;
     unsigned char *pdes = p_des;
     unsigned char *psrc = p_src;
 
@@ -78,8 +79,13 @@ int matrix_coding(GMatrix mat, unsigned char *p_des, unsigned char *p_src, int l
         case 8:
             for(i = 0; i < n; i++){
                 for(j = 0; j < k; j++){
-                    galois_w08_region_multiply(psrc+j*len_seg, 
-                            mat.Get(i,j), len_seg, pdes, 1);    
+                    muper = mat.Get(i, j);
+                    if(0 == muper){ continue; }
+                    if(1 == muper){
+                        galois_region_xor(psrc+j*len_seg, pdes, pdes, len_seg);
+                    }else{                    
+                        galois_w08_region_multiply(psrc+j*len_seg, muper, len_seg, pdes, 1);    
+                    }
                 }
                 pdes = pdes + len_seg;
             }
@@ -96,6 +102,7 @@ int matrix_coding(GMatrix mat, unsigned char *p_des, unsigned char *p_src, int l
         case 32:
             for(i = 0; i < n; i++){
                 for(j = 0; j < k; j++){
+                    cout<<"32\t"<<endl;
                     galois_w32_region_multiply(psrc+j*len_seg, 
                             mat.Get(i,j), len_seg, pdes, 1);    
                 }

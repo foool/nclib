@@ -1,7 +1,7 @@
 CC = g++
 CFLAGS = -g -lpthread -I ..
 
-ALL = matrank conftest battest test00 test01 test02 test03 test04 test05 test06 test07
+ALL = matcodtest matrank conftest battest test00 test01 test02 test03 test04 test05 test06 test07
 
 all: $(ALL)
 
@@ -15,6 +15,9 @@ conftest: conftest.o
 		$(CC) $(CFLAG) -o $@ $< ../*.o
 
 matrank: matrank.o
+		$(CC) $(CFLAGS) -o $@ $< ../*.o
+
+matcodtest: matcodtest.o
 		$(CC) $(CFLAGS) -o $@ $< ../*.o
 
 .cc.o:

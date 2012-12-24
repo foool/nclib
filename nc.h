@@ -57,10 +57,10 @@ class GMatrix{
         int Make_identity(int r, int c, int w);
         int Make_vandermonde(int r, int c, int w);
         int Make_sys_vandermonde(int r, int c, int w);
-        int Make_random(int r, int c, int w);
+        int Make_random(const int& r, const int& c, const int& w);
 
-        /* 1:Empyt -1:Not empty */
-        int Empty()const;
+        /* Empyt or Not empty */
+        bool Empty()const;
 
         /* Set/Get the value of row c , colomn c */
         void Set(int r, int c, uint32_t val);
@@ -175,7 +175,7 @@ GMatrix Transpose(GMatrix mat);
 /* GMatrix Random_GMatrix(int r, int c); */
 
 /* Drag a matrix from the matrix with rows from begin to end */
-GMatrix Slice_matrix(GMatrix mat, int begin, int len); 
+GMatrix Slice_matrix(const GMatrix& mat, const int& begin, const int& len); 
 
 /* Get len rows from mat */
 GMatrix Draw_rows(const GMatrix& mat, const vector<int>& row_list, const int& len);
