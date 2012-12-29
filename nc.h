@@ -58,6 +58,7 @@ class GMatrix{
         int Make_vandermonde(int r, int c, int w);
         int Make_sys_vandermonde(int r, int c, int w);
         int Make_random(const int& r, const int& c, const int& w);
+        int Make_random(const int& r, const int& c, const int& w, const int& mod);
 
         /* Empyt or Not empty */
         bool Empty()const;
@@ -79,7 +80,7 @@ class GMatrix{
         void Inverse();
         
         /* Is full-rank matrix or not? yes:1 ; no:0*/
-        int Is_full()const;
+        bool Is_full()const;
 
         /* swap r1 and r2 */
         void Swap_rows(int r1 , int r2);
@@ -162,7 +163,7 @@ void Copy(GMatrix &dst_mat, const GMatrix &src_mat);
 int Rank(GMatrix mat);
 
 /* Is full-rank matrix or not? yes:1 ; no:0 */
-int Is_full(GMatrix mat);
+bool Is_full(GMatrix mat);
 
 /* Inverse the matrix m and return it */
 GMatrix Inverse(GMatrix mat);
@@ -182,6 +183,9 @@ GMatrix Draw_rows(const GMatrix& mat, const vector<int>& row_list, const int& le
 GMatrix Draw_rows(const GMatrix& mat, const int * row_list, const int& len);
 GMatrix Draw_rows(const GMatrix& mat, const string& row_list, const int& len);
 
+void Mat8to32(GMatrix& mat);
+void Mat8to16(GMatrix& mat);
+
 /**************
  ** utils.cc **
  **************/
@@ -197,6 +201,7 @@ double dt_ms(struct timeval end,struct timeval start);
 double dt_us(struct timeval end,struct timeval start);
 
 void mem_print(unsigned char* pc, int len, int breaklen);
+void mem_print_(unsigned char* pc, int len, int breaklen);
 
 int Get_file_len(const string& filename);
 
@@ -206,10 +211,10 @@ int Get_file_len(const string& filename);
  * p_src store the data before Encode/Decode            *
  * length represent the length of the data to deal with *
  * p_des and p_src must be long-word aligned            */
-int matrix_coding(  GMatrix mat, 
-                    unsigned char *p_des, 
-                    unsigned char *p_src, 
-                    int length
+int matrix_coding(  const GMatrix& mat, 
+                    unsigned char * const p_des, 
+                    unsigned char * const p_src, 
+                    const int& length
                     );
 
 DLLEXPORT int NC_code_py(char * mat_c_p, int r, int c, int w, char *p_des, char *p_src, int length);

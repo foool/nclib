@@ -17,8 +17,6 @@ GMatrix::GMatrix(int rows, int cols, int w){
     Resize_matrix();
 }
 
-
-
 /* Set a matrix */
 int GMatrix::Make_from_list(int *p, int rows, int cols, int w){
     int i,j;
@@ -140,6 +138,7 @@ int GMatrix::Make_sys_vandermonde(int r, int c, int w){
     uint64_t val;
     int ins;
 
+    assert(r > c);
     Make_identity(c, c, w);
     this->rr = r;
     this->cc = c;
@@ -195,6 +194,49 @@ int GMatrix::Make_random(const int& rows, const int& cols, const int& w){
             for(i = 0; i < rr*cc; i++){
                 pm = (char *)&(ele32[i]);
                 rand = lrand48();
+                *(uint32_t *)pm = rand;
+            }
+            break;
+        default:
+            ERROR("Bad ww");
+            
+    }
+
+    return rows;
+}
+
+/* Make a r(rows)*c(cols) size random GMatrix matrix */
+int GMatrix::Make_random(const int& rows, const int& cols, const int& w, const int& mod){
+    int i;
+    int rand;
+    char *pm;
+
+    rr = rows;
+    cc = cols;
+    ww = w;
+    Resize_matrix();
+
+    srand48(time(0));
+    
+    switch(ww){
+        case 8:
+            for(i = 0; i < rr*cc; i++){
+                pm = (char *)&(ele8[i]);
+                rand = lrand48()%mod;
+                *(uint8_t *)pm = rand;
+            }
+            break;
+        case 16:
+            for(i = 0; i < rr*cc; i++){
+                pm = (char *)&(ele16[i]);
+                rand = lrand48()%mod;
+                *(uint16_t *)pm = rand;
+            }
+            break;
+        case 32:
+            for(i = 0; i < rr*cc; i++){
+                pm = (char *)&(ele32[i]);
+                rand = lrand48()%mod;
                 *(uint32_t *)pm = rand;
             }
             break;
@@ -704,8 +746,6 @@ void GMatrix::Append_matrix(GMatrix mat_app){
     int i, j;
     int end;
 
-    printf("in test");
-    NOTE("in test");
     assert(mat_app.cc == cc);
     end = rr;
     rr = rr + mat_app.rr;
@@ -997,20 +1037,20 @@ int Rank(GMatrix mat){
 /* Is full rank or not?
  * rr of full-rank matrix equals non-zero rows in the matrix
  * return 1 if it's full rank matrix, otherwise return 0 */
-int Is_full(GMatrix mat){
+bool Is_full(GMatrix mat){
     GMatrix mat_cpy;
     int nz_row, nz_col;     /* equal nzero_row in Inverse() */
     int i, j;
     uint32_t temp, jtimes;
 
     if(mat.rr > mat.cc){
-        return -1;
+        return false;
     }
     if(mat.rr <= 0){
-        return -1;
+        return false;
     }
     if(mat.cc <= 0){
-        return -1;
+        return false;
     }
 
     mat_cpy = mat;
@@ -1021,10 +1061,10 @@ int Is_full(GMatrix mat){
         nz_col = (nz_row > nz_col)?nz_row:nz_col;
         if(i == (mat_cpy.cc-1)){
             if(mat_cpy.Get(nz_row, nz_col) != 0){
-                return 1;
+                return true;
             }
             else{
-                return -1;
+                return false;
             }
         }
         
@@ -1044,7 +1084,7 @@ int Is_full(GMatrix mat){
             }
             ++nz_col;
             if(nz_col >= mat_cpy.cc){
-                return -1;
+                return false;
             }
         }
 
@@ -1055,7 +1095,7 @@ int Is_full(GMatrix mat){
             mat_cpy.Row_plus_irow(j, i, jtimes);
         }
     }
-    return 1;
+    return true;
 }    
 
 /* Inversion of a matrix */
@@ -1317,4 +1357,30 @@ GMatrix Draw_rows(const GMatrix& mat, const string& row_list, const int& len){
     return ret;
 }
 
+void Mat8to16(GMatrix& mat){
+    int r = mat.rr;
+    int c = mat.cc;
+    
+    mat.ele16.resize(r*c, 0);            
+    for(int i = 0; i < r; ++i){
+        for(int j = 0; j < c; ++j){
+            mat.ele16[i*c+j] = mat.ele8[i*c+j];
+        }
+    }
+    mat.ww = 16;
+    mat.ele8.clear();
+}
 
+void Mat8to32(GMatrix& mat){
+    int r = mat.rr;
+    int c = mat.cc;
+    
+    mat.ele32.resize(r*c, 0);            
+    for(int i = 0; i < r; ++i){
+        for(int j = 0; j < c; ++j){
+            mat.ele32[i*c+j] = mat.ele8[i*c+j];
+        }
+    }
+    mat.ww = 32;
+    mat.ele8.clear();
+}

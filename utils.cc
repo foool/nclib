@@ -27,6 +27,16 @@ double dt_us(struct timeval end,struct timeval start){
     return tu;
 }
 
+void mem_print_(unsigned char* pc, int len, int breaklen){
+    for(int i = 0; i < len; i++){
+        printf("%d ", *(pc+i));
+        if(((i+1)%breaklen)== 0){
+            printf("\n");
+        }
+    }
+    printf("\n");
+}
+
 void mem_print(unsigned char* pc, int len, int breaklen){
     for(int i = 0; i < len; i++){
         printf("%d", *(pc+i));
@@ -58,7 +68,7 @@ int Get_file_len(const string& filename){
  * p_src store the data before Encode/Decode            *
  * length represent the length of the data to deal with *
  * p_des, p_src must be long-word aligned               */
-int matrix_coding(GMatrix mat, unsigned char *p_des, unsigned char *p_src, int length){
+int matrix_coding(const GMatrix& mat, unsigned char * const p_des, unsigned char * const p_src, const int& length){
     int n, k, w;
     int i, j;
     int len_seg;
@@ -102,9 +112,9 @@ int matrix_coding(GMatrix mat, unsigned char *p_des, unsigned char *p_src, int l
         case 32:
             for(i = 0; i < n; i++){
                 for(j = 0; j < k; j++){
-                    cout<<"32\t"<<endl;
+                    muper = mat.ele32[i*mat.cc+j];
                     galois_w32_region_multiply(psrc+j*len_seg, 
-                            mat.Get(i,j), len_seg, pdes, 1);    
+                            muper, len_seg, pdes, 1);    
                 }
                 pdes = pdes + len_seg;
             }

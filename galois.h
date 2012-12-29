@@ -91,5 +91,4 @@ void galois_w32_region_multiply(unsigned char *region,       /* Region to multip
 extern void galois_w08_region_multby_2(unsigned char *region, int nbytes);
 extern void galois_w16_region_multby_2(unsigned char *region, int nbytes);
 extern void galois_w32_region_multby_2(unsigned char *region, int nbytes);
-
 #endif

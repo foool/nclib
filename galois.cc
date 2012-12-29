@@ -981,3 +981,4 @@ void galois_w32_region_multby_2(unsigned char *region, int nbytes)
 		l1++;
 	}
 }
+
