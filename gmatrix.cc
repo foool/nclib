@@ -84,6 +84,11 @@ int GMatrix::Make_from_string(string str, int rows, int cols, int w){
 
 /* Set values of previously allocated matrix to all 0s */
 int GMatrix::Make_zero(int rows, int cols, int w){
+    
+    this->ele8.clear();
+    this->ele16.clear();
+    this->ele32.clear();
+
     this->rr = rows;
     this->cc = cols;
     this->ww = w;
@@ -100,7 +105,8 @@ int GMatrix::Make_identity(int r, int c, int w){
     this->rr = r;
     this->cc = c;
     this->ww = w;
-    Resize_matrix();
+    Make_zero(r, c, w);
+    //Resize_matrix();
     
     for( i = 0; i < r; i++ )
         Set(i, i, 1);
@@ -256,6 +262,11 @@ bool GMatrix::Empty()const{
 /* Sets the r,c element of matrix to val */
 void GMatrix::Set( int r, int c, uint32_t val){
     char *pm;
+    
+    if((r >= this->rr) ||(c >= this->cc)){
+        printf("ERROR:Position out of range(r >= rows or c >= cols)!\n");
+        return;
+    }
 
     switch(ww){
         case 8:
@@ -277,6 +288,12 @@ void GMatrix::Set( int r, int c, uint32_t val){
 
 /* Get the element from row r, colomn c */
 uint32_t GMatrix::Get(int r, int c)const{
+    
+    if((r >= this->rr) ||(c >= this->cc)){
+        printf("ERROR:Position out of range(r >= rows or c >= cols)!\n");
+        return -1;
+    }
+
     switch(ww){
         case 8:
             return ele8[r*cc+c];
@@ -600,7 +617,7 @@ void GMatrix::Del_rows(int begin, int len){
     assert((begin >= 0)&&(begin < rr));
     assert(len > 0);
 
-    for(i = 0; i <= len; i++){
+    for(i = 0; i < len; i++){
         Del_row(begin);
     }
 }
@@ -846,6 +863,29 @@ void GMatrix::Wipe_matrix(int begin, int len, int value){
     }
 }
 
+void GMatrix::Clear_zero_rows(){
+    int ncur = 0;
+    bool az = true;
+    int i;
+
+    for(ncur = 0; ncur < this->rr; ++ncur){
+        for(i = 0; i < this->cc; ++i){
+            if(Get(ncur, i) != 0){
+                az = false;
+                break;
+            }
+        }
+        if(az){
+            this->Del_row(ncur);
+            --ncur;
+        }
+        az = true;
+    }
+
+    return;
+}
+
+
 /***********************
  * non-class functions *
  ***********************/
@@ -1027,9 +1067,10 @@ int Rank(GMatrix mat){
             jtimes = galois_single_divide(mat_cpy.Get(j,nz_col), mat_cpy.Get(i,nz_col), mat_cpy.ww);
             mat_cpy.Row_plus_irow(j, i, jtimes);
         }
+        mat_cpy.Clear_zero_rows();
     }
 
-    return mat.rr;
+    return mat_cpy.rr;
 }
 
 
@@ -1244,6 +1285,7 @@ GMatrix Slice_matrix(const GMatrix& mat, const int& begin, const int& len){
 
     assert(begin >= 0);
     assert(len > 0);
+    //printf("%d + %d <= %d\n",begin, len, mat.rr);
     assert(begin + len <= mat.rr);
     
     ret.rr = len;
@@ -1357,10 +1399,60 @@ GMatrix Draw_rows(const GMatrix& mat, const string& row_list, const int& len){
     return ret;
 }
 
+/* Equal to NK_property(mat, 1, mat.cc) */
+bool AnyCols(const GMatrix& mat){
+    int a[100];
+    int i;
+    int cur;
+    int piece = 1;
+    int k = mat.cc;
+    int n = mat.rr;
+    GMatrix mat_chk;
+
+    for(i = 0; i < k; i++){
+        a[i] = i;
+    }
+
+    cur = k-1;
+    
+    do{
+        if(a[cur]-cur <= n-k){
+            for(i = 0; i < k; i++){
+                if(0 == i){
+                    mat_chk = Slice_matrix(mat, a[i]*piece, piece);
+                }else{
+                    mat_chk.Append_matrix(mat, a[i]*piece, piece); 
+                }
+            }
+            
+            if(Is_full(mat_chk) == false){
+                NOTE("check full rank fail");
+                mat_chk.Print();
+                return false;
+            }
+            a[cur]++;
+            continue;
+        }else{
+            if(0 == cur){
+                break;
+            }
+            a[--cur]++;
+            for(i = 1; i < k - cur; i++){
+                a[cur+i]=a[cur]+i;
+            }
+            if(a[cur] - cur < n - k)
+                cur = k - 1;
+        }
+    }while(1);
+
+    return true;
+}
+
 void Mat8to16(GMatrix& mat){
     int r = mat.rr;
     int c = mat.cc;
     
+    assert(mat.ww == 8);
     mat.ele16.resize(r*c, 0);            
     for(int i = 0; i < r; ++i){
         for(int j = 0; j < c; ++j){
@@ -1375,6 +1467,7 @@ void Mat8to32(GMatrix& mat){
     int r = mat.rr;
     int c = mat.cc;
     
+    assert(mat.ww == 8);
     mat.ele32.resize(r*c, 0);            
     for(int i = 0; i < r; ++i){
         for(int j = 0; j < c; ++j){
@@ -1384,3 +1477,64 @@ void Mat8to32(GMatrix& mat){
     mat.ww = 32;
     mat.ele8.clear();
 }
+
+void Mat16to8(GMatrix& mat){
+    int r = mat.rr;
+    int c = mat.cc;
+    
+    assert(mat.ww == 16);
+    mat.ele8.resize(r*c, 0);            
+    for(int i = 0; i < r; ++i){
+        for(int j = 0; j < c; ++j){
+            mat.ele8[i*c+j] = (uint8_t)mat.ele16[i*c+j];
+        }
+    }
+    mat.ww = 8;
+    mat.ele16.clear();
+}
+
+void Mat16to32(GMatrix& mat){
+    int r = mat.rr;
+    int c = mat.cc;
+    
+    assert(mat.ww == 16);
+    mat.ele32.resize(r*c, 0);            
+    for(int i = 0; i < r; ++i){
+        for(int j = 0; j < c; ++j){
+            mat.ele32[i*c+j] = mat.ele16[i*c+j];
+        }
+    }
+    mat.ww = 32;
+    mat.ele16.clear();
+}
+
+void Mat32to8(GMatrix& mat){
+    int r = mat.rr;
+    int c = mat.cc;
+    
+    assert(mat.ww == 32);
+    mat.ele8.resize(r*c, 0);            
+    for(int i = 0; i < r; ++i){
+        for(int j = 0; j < c; ++j){
+            mat.ele8[i*c+j] = (uint8_t)mat.ele32[i*c+j];
+        }
+    }
+    mat.ww = 8;
+    mat.ele32.clear();
+}
+
+void Mat32to16(GMatrix& mat){
+    int r = mat.rr;
+    int c = mat.cc;
+    
+    assert(mat.ww == 32);
+    mat.ele16.resize(r*c, 0);            
+    for(int i = 0; i < r; ++i){
+        for(int j = 0; j < c; ++j){
+            mat.ele16[i*c+j] = (uint16_t)mat.ele32[i*c+j];
+        }
+    }
+    mat.ww = 16;
+    mat.ele32.clear();
+}
+

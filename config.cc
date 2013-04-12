@@ -8,26 +8,28 @@ Config::Config(string sec, string delim){
     delimiter = delim;
 }
 Config::Config(string filename){
-    size_t pos = -1;
+    size_t pos;
     string key, value, line;
-    int lbracket, rbracket;
+    size_t lbracket, rbracket;
     ifstream in(filename.c_str());
-    
+    typedef pair <string, string> Int_Pair;
     delimiter = string(1,'=');
     if(!in){
         throw File_not_found(filename);
     }
 
-    //get section and key-values from in
-    //get section
-    getline(in, line);
-    lbracket = (int)(line.find_first_of("["));
-    rbracket = (int)(line.find_last_of("]"));
-    section = line.substr(lbracket+1,(rbracket-lbracket-1));
 
     //get key-value
     getline(in, line);
     while(in||(line.length()>0)){
+        lbracket = (int)(line.find_first_of("["));
+        rbracket = (int)(line.find_last_of("]"));
+        if((lbracket != string::npos) && (rbracket != string::npos) && (lbracket != rbracket))
+        {
+            section = line.substr(lbracket+1,(rbracket-lbracket-1));
+            getline(in, line);
+            continue;
+        }
         pos = line.find(delimiter);
         if(pos == string::npos){
             getline(in, line);
@@ -35,27 +37,36 @@ Config::Config(string filename){
         }
         key = line.substr(0, (int)pos);
         value = line.substr((int)pos+1, line.length()-1);
-
+        if(true == section.empty())
+        {
+            throw Format_wrong("conf file format error");
+        }
         Trim(key);
         Trim(value);
-        consMap[key] = value;
+        consMap[section].insert(Int_Pair(key, value));
         getline(in, line);
     }
     in.close();
 }
+
+
+
 int Config::Write(const string& filename){
     int ret = 0;
-    mapi p;
+    mapi_f p_f;
+    mapi_s p_s;
     ofstream out(filename.c_str());
-
-    //section
-    out<<"["<<section<<"]"<<endl;
-
-    //key-value
-    for(p = consMap.begin(); p != consMap.end(); ++p){
-        ret++;
-        out<<p->first<<delimiter<<p->second<<endl;
+    for(p_f = consMap.begin(); p_f != consMap.end(); ++p_f)
+    {
+        out<<"["<<p_f->first<<"]"<<endl;
+        for(p_s = (p_f->second).begin(); p_s != (p_f->second).end(); ++p_s)
+        {
+            ret++;
+            out<<p_s->first<<delimiter<<p_s->second<<endl;
+        }
     }
+
+
     out.close();
 
     return ret;
@@ -85,10 +96,27 @@ void Config::Trim( string& str ){
     str.erase(str.find_last_not_of(whitespace)+1);  
 }
 
-bool Config::KeyExist( const string& key ) const  {   
-    mapci p = consMap.find( key );  
+bool Config::KeyExist( const string& key ) const  {
+    mapci_f iter1 = consMap.find(section);
+    if(iter1 == consMap.end())
+    {
+        return false;
+    }
+    else
+    {
+        mapci_s iter2 = (iter1->second).find(key);
+        if(iter2 == (iter1->second).end())
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+    //mapci p = consMap.find( key );  
     
-    return ( p != consMap.end() );  
+    //return ( p != consMap.end() );  
 }
 
 bool Config::FileExist(string filename){
