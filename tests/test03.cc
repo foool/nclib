@@ -23,6 +23,7 @@ void usage(){
 
 int main(void){
     GMatrix m1;
+    GMatrix m2;
     char *str;
     char *cmd;
     int i, j;
@@ -31,8 +32,20 @@ int main(void){
     
     str = new char(40);
     cmd = new char(10);
-    m1.Make_random(4, 4, 8);
-
+    m1.Make_random(6, 4, 8);
+#if 0
+    m1.Make_identity(4,4,8);
+    m2.Make_random(2, 4, 8);
+    m1.Append_matrix(m2);
+    m1.Set(4, 0, 17);
+    m1.Set(4, 1, 105);
+    m1.Set(4, 2, 40);
+    m1.Set(4, 3, 236);
+    m1.Set(5, 0, 75);
+    m1.Set(5, 1, 158);
+    m1.Set(5, 2, 104);
+    m1.Set(5, 3, 227);
+#endif
     while(1){
         argu_num = 0;   /* numbers of arguments */
         printf(">>>");

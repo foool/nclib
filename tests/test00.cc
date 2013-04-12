@@ -40,8 +40,9 @@ int main(void){
         return 0;
     }
     NOTE("file opened!");
-    m1.Make_from_file(fp, 6, 6, 8);
+    m1.Make_from_file(fp, 3, 8, 8);
     m1.Print();
+    printf("Rank of matrix: %d",Rank(m1));
     fclose(fp);
 
     NOTE(" GMatrix from a list ");
@@ -58,5 +59,10 @@ int main(void){
     NOTE(" Make_identity ");
     m1.Make_identity(4, 4, 8);
     m1.Print();
+
+    //new
+    printf("prim08 = %u\n",galois_single_multiply((1 << 7), 2, 8));
+    printf("prim16 = %u\n",galois_single_multiply((1 << 15), 2, 16));
+    printf("prim32 = %u\n",galois_single_multiply((1 << 31), 2, 32));
 
 }
