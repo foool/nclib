@@ -1,7 +1,7 @@
 CC = g++
 CFLAGS = -g -Wall -fPIC -I$(HOME)/include 
 
-ALL = src.o reed_sol.o
+ALL = src.o reed_sol.o frc.o
 all: $(ALL)
 
 clean:
@@ -13,3 +13,4 @@ clean:
 
 src.o: src.h
 reed_sol.o: reed_sol.h
+frc.o: frc.h

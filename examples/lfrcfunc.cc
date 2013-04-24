@@ -52,8 +52,11 @@ int main(int argc, char *argv[]){
     assert(n > k);
     assert((n-1)*beta >= alpha);
 
-    mat.Make_random(row, col, 8);
-    while(1 != NK_property(mat, row/n, k)){
+    // loop
+    srand(time(NULL));
+
+    mat.Make_vandermonde(row, col, 8);
+    while(1 != NK_property(mat, row/n, k) || false == CL_property(mat, n, k) ){
         mat.Make_random(row, col, 8);
         NOTE("Generate new matrix!");
         //getchar();
@@ -62,8 +65,6 @@ int main(int argc, char *argv[]){
     mat.Print();
     getchar();
 
-    // loop
-    srand(time(NULL));
     //while(count>=0){
     while(true){
         
@@ -74,7 +75,7 @@ int main(int argc, char *argv[]){
         mat.Wipe_matrix(fnode*alpha, alpha, 0);
         printf("fail node %d \t\t", fnode);
         //mat.Print();
-        //getchar();
+        getchar();
         //printf("----------- begin to repair ------------\n");
 
         //repair
@@ -160,8 +161,8 @@ bool repair(GMatrix& mat, const int& k, const int& alpha, const int& fnode, cons
         //NOTE("mat__");
         //mat__.Print();
         //getchar();
-        //mat_rnd.Make_vandermonde(alpha, beta*d, 8);
-        mat_rnd.Make_random(alpha, beta*d, 8);
+        mat_rnd.Make_vandermonde(alpha, beta*d, 8);
+        //mat_rnd.Make_random(alpha, beta*d, 8);
         //NOTE("random matrix");
         //mat_rnd.Print();
         mat_rpr = Prod(mat_rnd, mat_beta);
@@ -179,13 +180,21 @@ bool repair(GMatrix& mat, const int& k, const int& alpha, const int& fnode, cons
         //mat__.Print();
         if(1 == NK_property(mat_, alpha, k)){
             if(false == RP_property(mat_, mat_.rr/alpha, k, beta)){
-                printf("RP_property false!\n");
-                getchar();
+                printf("\nRP_property false!\n");
+                //getchar();
+            }
+            
+            if(false == CL_property(mat_, mat_.rr/alpha, k)){
+                printf("CL_property false!\n");
+                //getchar();
                 continue;
-            }else{
+            }
+
+            //if(true == AnyCols(mat__)){
+                //printf("%d times to repair\n", 1000-circle);
                 mat = mat_;
                 return true;
-            }
+            //}
         }
         //printf("The rank of the matrix is %d\n",Rank(mat_));
         //getchar();
