@@ -297,6 +297,9 @@ int Reed_Sol::Repair( int fnode )const{
     return repair_type;
 }
 
+/*
+ * repair more than 1 nodes at a time
+ */
 int Reed_Sol::Repair( string fnodes )const{
     static const char whitespace[] = " \n\t\v\r\f";
     vector <int> fnodes_list;
@@ -357,8 +360,10 @@ int Reed_Sol::Repair( string fnodes )const{
                 live_nodes.push_back(i);
             }
             for(int i = 0; i < amount_failures; ++i){
+                /* ? */
                 live_nodes.erase(fnodes_list.begin()+i);
             }
+            /* ? mat.cc */
             GMatrix mat_live = Draw_rows(this->mat, live_nodes, mat.cc);
             NOTE("mat_live");
             mat_live.Print();

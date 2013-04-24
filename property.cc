@@ -1,4 +1,7 @@
 #include "nc.h"
+#include "property.h"
+#include "utils.h"
+
 /* Default d = n-1*/
 bool RP_property(const GMatrix& mat, int n, int k, int beta){
     int alpha;
@@ -258,18 +261,27 @@ int NK_property(GMatrix mat, int piece, int k){
     return 1;
 }
 
-int NK_property_(GMatrix mat, int piece, int k){
+int NK_property_(const GMatrix mat, const int piece, int k, const int beta){
     int i;
     int n;
+    int d;
     int a[100];
     int cur;
+    int max_r;
     GMatrix mat_chk;
     vector<int> shift;   /* shift used to move k non-zero elements *
                           * and store the result                   */ 
 
     assert(0 == mat.rr%piece);
     n = (mat.rr/piece);
+    d = n-1;
     assert(k < n);
+
+    if(d*beta > mat.cc){
+        max_r = d*beta;
+    }else{
+        max_r = mat.cc-piece;
+    }
 
     /* Any node matrix is full rank */
     for(i = 0; i < n; i++){
@@ -295,7 +307,7 @@ int NK_property_(GMatrix mat, int piece, int k){
                 }
             }
             
-            if(AnyCols(mat_chk) == false){
+            if(AnyCols(mat_chk, max_r) == false){
                 printf("AnyCols failed matrix RANK = %d\n",Rank(mat_chk));
                 mat_chk.Print();
                 return 0;
@@ -437,3 +449,287 @@ int NK_property(GMatrixU8 mat, int piece, int k){
     return 1;
 }
 
+/* CL_property: Continuous Loop property */
+bool CL_property(GMatrix mat, int n, int k){
+    int alpha;
+    int row;
+    int col;
+    int a[100]; //n < 100
+    int cur;
+    
+    row = mat.rr;
+    col = mat.cc;
+    alpha = row/n;
+    if(n - alpha >= k){
+        return true;
+    }
+    
+    /* C_{n}^{\alpha} \times A_{\alpha}^{\alpha} \prod_{i = 1}^{\alpha}C_{\alpha}^{i}*/
+    for(int i = 0; i < k; ++i){
+        a[i] = i;
+    }
+    cur = k-1;
+    do{
+        if(a[cur] - cur <= n-k){
+            vector<int> vi;
+            for(int i = 0; i < k; ++i){
+                vi.push_back(a[i]);
+            }
+
+            // vi are the node numbers for candidates
+            sort_v_i(vi); //sort the values
+
+            do{
+                //for(unsigned i = 0; i < vi.size(); ++i){
+                //    printf("%d ",vi.at(i));
+                //}
+                //printf("\n");
+                //
+                //A_{n}^{alpha}
+                if(CL_S_property(mat, n, vi) == false){
+                    return false;
+                }
+            }while(true == next_permutation(vi));
+            //do something
+            a[cur]++;
+            continue;
+        }else{
+            if(cur == 0){
+                break;
+            }
+            --cur;
+            ++a[cur];
+            for(int i = 1; i < k-cur; ++i){
+                a[cur+i] = a[cur]+i;
+            }
+            if(a[cur]-cur < n-k){
+                cur = k-1;
+            }
+        }
+    }while(true);
+
+    return true;
+}
+
+bool CL_S_property(GMatrix mat, int n, vector<int> vi){
+    int alpha;
+    int i, j;
+    vector< vector<int> > vv;
+    vector< vector<int> > va;
+
+    alpha = mat.rr/n;
+
+    vv.resize(alpha);
+    for(i = 0; i < alpha; ++i){
+        for(j = 0; j < alpha; ++j){
+            vv.at(i).push_back(vi.at(i)*alpha+j);
+        }
+    }
+    
+    va.resize(alpha);
+    for(i = 0; i < alpha; ++i){
+        for(j = 0; j < alpha-i; ++j){
+            va.at(i).push_back(j);
+        }
+    }
+
+    do{
+        do{
+            //for(i = 0; i < alpha; ++i){
+            //    for(j = 0; j < alpha-i; ++j){
+            //        printf("%d ",va.at(i).at(j));
+            //    }
+            //    printf("  ");
+            //}
+            //printf("\n");
+
+            vector<int> vb;
+            for(int i = 0; i < alpha; ++i){
+                for(int j = 0; j < alpha-i; ++j){
+                    vb.push_back(vi[i]*alpha + va[i][j]);
+                }
+            }
+            //printf("vb :  ");
+            //for(unsigned i = 0; i < vb.size(); ++i){
+            //    printf("%d ", vb[i]);
+            //}
+            //printf("\n");
+
+            GMatrix mat_t;
+            mat_t = mat;
+            mat_t.Del_rows(vb);
+            //NOTE("matrix");
+            //mat_t.Print();
+            //do something
+            if(Rank(mat_t) < mat_t.cc){
+                //NOTE("false matrix");
+                //mat_t.Print();
+                return false;
+            }
+        }while(next_combination(va.at(0), alpha));
+        /*  need to add this ?
+                va[0].resize(0);
+                for(j = 0; j < beta; ++j){
+                    va.at(0).push_back(j);
+                }
+                */
+        for(int i = 1; i < alpha; ++i){
+            if(next_combination(va.at(i), alpha)){
+                break;
+            }else{
+                if(i == (alpha-1)){
+                    return true;
+                }
+                //restore the va to the intial
+                va.at(i).resize(0);
+                for(j = 0; j < alpha-i; ++j){
+                    va.at(i).push_back(j);
+                }
+                continue;
+            }
+        }
+    }while(true);
+
+    return true;
+}
+
+bool AnyCols(const GMatrix& mat, const int max_r){
+    int a[100];
+    int i;
+    int cur;
+    int piece = 1;
+    int k = mat.cc;
+    int n = mat.rr;
+    GMatrix mat_chk;
+
+    for(i = 0; i < k; i++){
+        a[i] = i;
+    }
+
+    cur = k-1;
+    
+    do{
+        if(a[cur]-cur <= n-k){
+            for(i = 0; i < k; i++){
+                if(0 == i){
+                    mat_chk = Slice_matrix(mat, a[i]*piece, piece);
+                }else{
+                    mat_chk.Append_matrix(mat, a[i]*piece, piece); 
+                }
+            }
+            
+            if(Rank(mat_chk) < max_r){
+                NOTE("check fail");
+                printf("RANK = %d\n",Rank(mat_chk));
+                mat_chk.Print();
+                return false;
+            }
+            a[cur]++;
+            continue;
+        }else{
+            if(0 == cur){
+                break;
+            }
+            a[--cur]++;
+            for(i = 1; i < k - cur; i++){
+                a[cur+i]=a[cur]+i;
+            }
+            if(a[cur] - cur < n - k)
+                cur = k - 1;
+        }
+    }while(1);
+
+    return true;
+}
+
+/*
+ * from n nodes, select any beta vectors from any d=(n-1) nodes have a full rank
+ */ 
+bool DB_property(const GMatrix& mat, const int n, const int beta){
+    int alpha;
+    int i;
+   
+    //printf("beta = %d\n",beta);
+    alpha = mat.rr/n;
+    for(i = 0; i < n; i++){
+        GMatrix mat_t = mat;
+        mat_t.Del_rows(i*alpha, alpha);
+        if(false == DB_S_property(mat_t, n-1, beta)){
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+
+bool DB_S_property(const GMatrix& mat, const int d, const int beta){
+    int i, j;
+    int alph = mat.rr/d;
+    vector< vector<int> > va;
+
+    va.resize(d);
+    for(i = 0; i < d; ++i){
+        for(int j = 0; j < beta; ++j){
+            va[i].push_back(j);
+        }
+    }
+
+    do{
+        do{
+            //for(i = 0; i < d; ++i){
+            //    for(j = 0; j < beta; ++j){
+            //        printf("%d ",va.at(i).at(j));
+            //    }
+            //    printf("  ");
+            //}
+            //printf("\n");
+
+            vector<int> vb;
+            for(int i = 0; i < d; ++i){
+                for(int j = 0; j < beta; ++j){
+                    vb.push_back(i*alph + va[i][j]);
+                }
+            }
+
+            //for(unsigned i = 0; i < vb.size(); i++){
+            //    printf("%d \t",vb[i]);
+            //}
+            //printf("\n");
+            GMatrix mat_t;
+            mat_t = mat;
+            mat_t = Draw_rows(mat_t, vb, vb.size());
+            //do something
+            if(Rank(mat_t) < mat_t.rr){
+                //NOTE("failure matrix");
+                //mat_t.Print();
+                //printf("The rank of the matrix is %d\n",Rank(mat_t));
+                return false;
+            }else{
+                //NOTE("successfull matrix");
+                //mat_t.Print();
+                //printf("The rank of the matrix is %d\n",Rank(mat_t));
+            }
+            //getchar();
+        }while(next_combination(va.at(0), alph));
+                va.at(0).resize(0);
+                for(j = 0; j < beta; ++j){
+                    va.at(0).push_back(j);
+                }
+        for(int i = 1; i < d; ++i){
+            if(next_combination(va.at(i), alph)){
+                break;
+            }else{
+                if(i == (d-1)){
+                    return true;
+                }
+                va.at(i).resize(0);
+                for(j = 0; j < beta; ++j){
+                    va.at(i).push_back(j);
+                }
+                continue;
+            }
+        }
+    }while(true);
+
+}

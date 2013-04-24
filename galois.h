@@ -1,5 +1,9 @@
 #ifndef _GALOIS_H
 #define _GALOIS_H
+#include "stdint.h"
+#define __STDC_FORMAT_MACROS
+/*The ISO C99 standard specifies that these macros must only be defined if explicitly requested, for print uint64_t*/
+#include "inttypes.h"
 
 /*
   Overview of changes:
@@ -34,6 +38,7 @@ int galois_single_divide(int a, int b, int w);
 int galois_log(int value, int w);
 int galois_ilog(int value, int w);
 
+int galois_create_log_tables_64();
 int galois_create_log_tables(int w);   /* Returns 0 on success, -1 on failure */
 int galois_logtable_multiply(int x, int y, int w);
 int galois_logtable_divide(int x, int y, int w);
@@ -43,13 +48,18 @@ int galois_multtable_multiply(int x, int y, int w);
 int galois_multtable_divide(int x, int y, int w);
 
 int galois_shift_multiply(int x, int y, int w);
+uint64_t galois_shift_multiply_64(uint64_t x, uint64_t y);
 int galois_shift_divide(int x, int y, int w);
 
+void galois_invert_binary_matrix_64(uint64_t *mat, uint64_t *inv);
 int galois_create_split_w8_tables();
 int galois_split_w8_multiply(int x, int y);
+uint64_t galois_split_w16_multiply(uint64_t x, uint64_t y);
 
 int galois_inverse(int x, int w);
 int galois_shift_inverse(int y, int w);
+uint64_t galois_shift_inverse_64(uint64_t x);
+uint64_t galois_single_divide_64(uint64_t a, uint64_t b);
 
 int *galois_get_mult_table(int w);
 int *galois_get_div_table(int w);
@@ -61,6 +71,11 @@ void galois_region_xor(         unsigned char *r1,         /* Region 1 */
                                 unsigned char *r2,         /* Region 2 */
                                 unsigned char *r3,         /* Sum region (r3 = r1 ^ r2) -- can be r1 or r2 */
                                          int nbytes);      /* Number of bytes in region */
+
+void galois_region_xor_1k(      unsigned char *r1,
+                                unsigned char *r2,         
+                                unsigned char *r3,
+                                unsigned long nbytes);
 
 /* These multiply regions in w=8, w=16 and w=32.  They are much faster
    than calling galois_single_multiply.  The regions must be long word aligned. */
@@ -87,8 +102,16 @@ void galois_w32_region_multiply(unsigned char *region,       /* Region to multip
                                                               Otherwise region is overwritten */
                                          int add);         /* If (r2 != NULL && add) the produce is XOR'd with r2 */
 
+int galois_create_split_w16_tables();
+
 //previously in reed_sol
+extern void galois_w04_region_multby_2(unsigned char *region, int nbytes);
+extern void galois_w04_region_multby_2_64(unsigned char *region, int nbytes);
 extern void galois_w08_region_multby_2(unsigned char *region, int nbytes);
+extern void galois_w08_region_multby_2_64(unsigned char *region, int nbytes);
 extern void galois_w16_region_multby_2(unsigned char *region, int nbytes);
+extern void galois_w16_region_multby_2_64(unsigned char *region, int nbytes);
 extern void galois_w32_region_multby_2(unsigned char *region, int nbytes);
+extern void galois_w32_region_multby_2_64(unsigned char *region, int nbytes);
+extern void galois_w64_region_multby_2(unsigned char *region, int nbytes);
 #endif

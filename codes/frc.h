@@ -3,6 +3,7 @@
 #include "../galois.h"
 #include "../nc.h"
 #include "../config.h"
+#include "../gf_complete.h"
 #include <iostream>
 #include <sstream>
 #include <fcntl.h>

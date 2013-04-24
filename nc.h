@@ -140,6 +140,7 @@ class GMatrix{
         int Make_vandermonde(int r, int c, int w);
         int Make_sys_vandermonde(int r, int c, int w);
         int Make_random(const int& r, const int& c, const int& w);
+        int Make_random_nz(const int& rows, const int& cols, const int& w);
         int Make_random(const int& r, const int& c, const int& w, const int& mod);
 
         /* Empyt or Not empty */
@@ -184,6 +185,9 @@ class GMatrix{
 
         /* Delete len rows from the begin row*/
         void Del_rows(int begin, int len);
+
+        /* Delete rows which numbers are in vec*/
+        void Del_rows(vector<int> vec);
 
         /* Delete column col*/
         void Del_col(int col);
@@ -268,10 +272,6 @@ GMatrix Draw_rows(const GMatrix& mat, const vector<int>& row_list, const int& le
 GMatrix Draw_rows(const GMatrix& mat, const int * row_list, const int& len);
 GMatrix Draw_rows(const GMatrix& mat, const string& row_list, const int& len);
 
-/* If any of cols rows of mat are indenpendent ?
- * Equal to NK_property(mat, 1, mat.cc)*/
-bool AnyCols(const GMatrix& mat);
-
 /* GMatrix transform*/
 void Mat8to32(GMatrix& mat);
 void Mat8to16(GMatrix& mat);
@@ -279,6 +279,36 @@ void Mat16to8(GMatrix& mat);
 void Mat16to32(GMatrix& mat);
 void Mat32to8(GMatrix& mat);
 void Mat32to16(GMatrix& mat);
+
+/*****************
+ ** property.cc **
+ *****************/
+bool CL_property(GMatrix mat, int n, int k);
+
+/* RP_property is used to check which nodes cann't repair  *
+ * in the next loop, but it cann't be a decisive condition *
+ * as NK_property                                          */
+bool RP_property(const GMatrix& mat, int n, int k, int beta);
+
+/* NK_property checks the system combining the new node *
+ * satisfing (n,k) property, this is, k out of n nodes  *
+ * can reconstruct the original data                    *
+ * piece : how many rows of matrix mat in a node        */
+int NK_property(GMatrix mat, int piece, int k);
+int NK_property_(const GMatrix mat, const int piece, const int k, const int beta);
+int NK_property(GMatrix64 mat, int piece, int k);
+int NK_property(GMatrixU8 mat, int piece, int k);
+
+/* 
+ * If any of cols rows of mat are indenpendent 
+ */
+bool AnyCols(const GMatrix& mat, const int dbeta);
+
+/*
+ * from n nodes, select any beta vectors from any d=(n-1) nodes have a full rank
+ */ 
+bool DB_property(const GMatrix& mat, const int n, const int beta);
+
 
 /**************
  ** utils.cc **
@@ -314,21 +344,6 @@ int NC_encode_file(GMatrix mat_en, FILE *fp_src, FILE **fpp_des);
  * fpp_src point to the files to be decoded             *
  * fp_des point to the file where decoded data store    */
 int NC_decode_file(GMatrix mat_de, FILE **fpp_src, FILE *fp_des);
-
-
-
-bool RP_property(const GMatrix& mat, int n, int k, int beta);
-bool DR_property(GMatrix mat, int n, int k, int beta);
-
-
-/* NK_property checks the system combining the new node *
- * satisfing (n,k) property, this is, k out of n nodes  *
- * can reconstruct the original data                    *
- * piece : how many rows of matrix mat in a node        */
-int NK_property(GMatrix mat, int piece, int k);
-int NK_property_(GMatrix mat, int piece, int k);
-int NK_property(GMatrix64 mat, int piece, int k);
-int NK_property(GMatrixU8 mat, int piece, int k);
 
 string _Trim(string ss);
 

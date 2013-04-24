@@ -52,9 +52,10 @@ int main(int argc, char *argv[]){
     assert(n > k);
     assert((n-1)*beta >= alpha);
 
-    mat.Make_random(row, col, 8);
+    mat.Make_random(row, col, 16);
+    //mat.Make_vandermonde(row, col, 8);
     while(1 != NK_property(mat, row/n, k)){
-        mat.Make_random(row, col, 8);
+        mat.Make_random(row, col, 16);
         NOTE("Generate new matrix!");
         //getchar();
     }
@@ -72,7 +73,7 @@ int main(int argc, char *argv[]){
         //fnode = ++fnode_t%n;
         mat_=mat;
         mat.Wipe_matrix(fnode*alpha, alpha, 0);
-        printf("fail node %d \t\t", fnode);
+        //printf("fail node %d \t\t", fnode);
         //mat.Print();
         //getchar();
         //printf("----------- begin to repair ------------\n");
@@ -83,7 +84,9 @@ int main(int argc, char *argv[]){
             //printf("Success to repair\n");
             //mat.Print();
             ++ccc;
-            printf("%10d\n",ccc);
+            if(ccc%10000 == 0){
+                printf("%10d\n",ccc);
+            }
         }else{
             printf("Fail to repair, at the %d-th time\n", ccc);
             NOTE("The Matrix cann't repair");
@@ -109,9 +112,9 @@ bool repair(GMatrix& mat, const int& k, const int& alpha, const int& fnode, cons
     int vpn = beta;
     GMatrix mat_rpr;
     int i, j;
+    int dbeta = d*beta;
 
     assert(vpn <= alpha);
-    //printf("n = %d, alpha = %d, beta = %d, vpn = %d\n",mat.rr/alpha,alpha,beta,vpn);
 
     // loop 1000 times
     while(--circle > 0){
@@ -155,49 +158,66 @@ bool repair(GMatrix& mat, const int& k, const int& alpha, const int& fnode, cons
             free(vpn_idx);
         }while(ncur < ds);
 
-        //NOTE("mat_beta after trim");
-        //mat_beta.Print();
-        //NOTE("mat__");
-        //mat__.Print();
-        //getchar();
         //mat_rnd.Make_vandermonde(alpha, beta*d, 8);
-        mat_rnd.Make_random(alpha, beta*d, 8);
-        //NOTE("random matrix");
-        //mat_rnd.Print();
+        mat_rnd.Make_random_nz(alpha, beta*d, 16);
+        if(false == Is_full(mat_rnd)){
+            continue;
+        }
         mat_rpr = Prod(mat_rnd, mat_beta);
-        //NOTE("repair matrix");
-        //mat_rpr.Print();
-        //getchar();
 
         mat_.Replace_matrix(mat_rpr, fnode*alpha, alpha);
         mat__.Replace_matrix(mat_rpr, fnode*alpha, alpha);
         mat__.Clear_zero_rows();
 
-        //NOTE("matrix after repair!");
-        //mat_.Print();
-        //NOTE("mat__ clear all zero rows !");
-        //mat__.Print();
-        if(1 == NK_property(mat_, alpha, k)){
-            if(false == RP_property(mat_, mat_.rr/alpha, k, beta)){
-                printf("RP_property false!\n");
+#if 0
+        if(true == NK_property_(mat_, alpha, k, beta)){
+            printf("any cols true");
+        }else{
+            printf("any cols false");
+        }
+        getchar();
+#endif
+        //if(true == NK_property(mat_, alpha, k)){
+        if(true == NK_property(mat_,alpha,k)&&true == DB_property(mat_,ds,beta)){
+            //if(false == RP_property(mat_, mat_.rr/alpha, k, beta)){
+            //    printf("RP_property false!\n");
+            //    getchar();
+            //}
+            if(false == DB_property(mat_, ds, beta)){
+                /*
+                printf("DB_property failed !!!!\n");
+                NOTE("mat_");
+                mat_.Print();
+                NOTE("mat_beta");
+                mat_beta.Print();
+                NOTE("mat_rnd");
+                mat_rnd.Print();
+                NOTE("mat");
+                mat.Print();
+                getchar();
+                */
+            }
+            
+            mat = mat_;
+            return true;
+        }else{
+            /*
+            if(false == DB_property(mat_, ds, beta)){
+                printf("DB_property failed !!!!\n");
+                NOTE("mat_");
+                mat_.Print();
+                NOTE("mat_beta");
+                mat_beta.Print();
+                NOTE("mat_rnd");
+                mat_rnd.Print();
+                NOTE("mat");
+                mat.Print();
                 getchar();
             }
-            //if(true == AnyCols(mat__)){
-                //printf("%d times to repair\n", 1000-circle);
-                mat = mat_;
-                return true;
-            //}
+            */
+            //printf("more than 1 loop");
+            //getchar();
         }
-        //printf("The rank of the matrix is %d\n",Rank(mat_));
-        //getchar();
-        /*GMatrix mat_b;
-        mat_b = mat_;
-        mat_b.Del_rows(0, 1);
-        NOTE("      l check      ");
-        mat_b.Print();
-        printf("Rank       %d\n",Rank(mat_b));
-        getchar();*/
     }
-
     return false;
 }

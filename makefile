@@ -1,7 +1,7 @@
 CC = g++
-CFLAGS = -g -Wall -Wextra -fPIC -I$(HOME)/include 
+CFLAGS = -O3 -g -Wall -Wextra -fPIC  -I$(HOME)/include 
 
-ALL = config.o galois.o gmatrix.o utils.o libnc.so
+ALL = config.o galois.o gmatrix.o gmatrix64.o gmatrixu8.o mcoding.o property.o utils.o nc.o
 all: $(ALL)
 
 clean:
@@ -14,4 +14,4 @@ config.o: config.h
 galois.o: galois.h
 nc.o: nc.h galois.h
 libnc.so:
-	$(CC) -fPIC -o libnc.so -shared config.o galois.o gmatrix.o utils.o
+	$(CC) -fPIC -o libnc.so -shared config.o galois.o gmatrix.o gmatrix64.o utils.o

@@ -194,7 +194,10 @@ int FRC::MemCoding(GMatrix & gm, unsigned char *psrc, unsigned char *pdes, int s
             w16coding_(gm, pdes, psrc, size);
             break;
         case 8:
-            w8coding_(gm, pdes, psrc, size);
+            //w8coding(gm, pdes, psrc, size);
+            gf_t gfm;
+            gf_init_easy(&gfm, 8);
+            w8coding_opt(gm, pdes, psrc, size, gfm);
             break;
         default:
             printf("no such coding type!\n");

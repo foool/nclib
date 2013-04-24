@@ -1,5 +1,6 @@
 #include "nc.h"
 #include "galois.h"
+#include "utils.h"
 
 /* Create an empty matrix */
 GMatrix::GMatrix(){
@@ -17,7 +18,7 @@ GMatrix::GMatrix(int rows, int cols, int w){
     Resize_matrix();
 }
 
-/* Set a matrix */
+/* Create a matrix with a int[] */
 int GMatrix::Make_from_list(int *p, int rows, int cols, int w){
     int i,j;
     int shift;
@@ -167,6 +168,63 @@ int GMatrix::Make_sys_vandermonde(int r, int c, int w){
     return r;
 }
 
+
+/* Make a r(rows)*c(cols) size random GMatrix matrix */
+int GMatrix::Make_random_nz(const int& rows, const int& cols, const int& w){
+    int i;
+    char *pm;
+
+    rr = rows;
+    cc = cols;
+    ww = w;
+    Resize_matrix();
+
+    srand48(time(0));
+    
+    switch(ww){
+        case 8:
+        {
+            uint8_t rand;
+            for(i = 0; i < rr*cc; i++){
+                pm = (char *)&(ele8[i]);
+                do{
+                    rand = (uint8_t)lrand48();
+                }while(rand == 0);
+                *(uint8_t *)pm = rand;
+            }
+            break;
+        }
+        case 16:
+        {
+            uint16_t rand;
+            for(i = 0; i < rr*cc; i++){
+                pm = (char *)&(ele16[i]);
+                do{
+                    rand = (uint16_t)lrand48();
+                }while(rand == 0);
+                *(uint16_t *)pm = rand;
+            }
+            break;
+        }
+        case 32:
+        {
+            uint32_t rand;
+            for(i = 0; i < rr*cc; i++){
+                pm = (char *)&(ele32[i]);
+                do{
+                    rand = (uint32_t)lrand48();
+                }while(rand == 0);
+                *(uint32_t *)pm = rand;
+            }
+            break;
+        }
+        default:
+            ERROR("Bad ww");
+            
+    }
+
+    return rows;
+}
 
 /* Make a r(rows)*c(cols) size random GMatrix matrix */
 int GMatrix::Make_random(const int& rows, const int& cols, const int& w){
@@ -619,6 +677,19 @@ void GMatrix::Del_rows(int begin, int len){
 
     for(i = 0; i < len; i++){
         Del_row(begin);
+    }
+}
+
+        
+void GMatrix::Del_rows(vector<int> vec){
+    int i;
+
+    sort_v_i(vec);
+    if(vec[vec.size()-1] > this->rr){
+        printf("error: deleted row > mat.rr\n");
+    }
+    for(i = vec.size()-1; i >= 0; --i){
+        this->Del_row(vec.at(i));
     }
 }
 
@@ -1397,55 +1468,6 @@ GMatrix Draw_rows(const GMatrix& mat, const string& row_list, const int& len){
     free(lst);
 
     return ret;
-}
-
-/* Equal to NK_property(mat, 1, mat.cc) */
-bool AnyCols(const GMatrix& mat){
-    int a[100];
-    int i;
-    int cur;
-    int piece = 1;
-    int k = mat.cc;
-    int n = mat.rr;
-    GMatrix mat_chk;
-
-    for(i = 0; i < k; i++){
-        a[i] = i;
-    }
-
-    cur = k-1;
-    
-    do{
-        if(a[cur]-cur <= n-k){
-            for(i = 0; i < k; i++){
-                if(0 == i){
-                    mat_chk = Slice_matrix(mat, a[i]*piece, piece);
-                }else{
-                    mat_chk.Append_matrix(mat, a[i]*piece, piece); 
-                }
-            }
-            
-            if(Is_full(mat_chk) == false){
-                NOTE("check full rank fail");
-                mat_chk.Print();
-                return false;
-            }
-            a[cur]++;
-            continue;
-        }else{
-            if(0 == cur){
-                break;
-            }
-            a[--cur]++;
-            for(i = 1; i < k - cur; i++){
-                a[cur+i]=a[cur]+i;
-            }
-            if(a[cur] - cur < n - k)
-                cur = k - 1;
-        }
-    }while(1);
-
-    return true;
 }
 
 void Mat8to16(GMatrix& mat){

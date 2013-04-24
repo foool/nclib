@@ -56,7 +56,7 @@ int main(){
             for(k = 2; k < n; ++k){
                 for(beta = 1; beta < alpha; ++beta){
                     for(col = k*alpha; col >= 2; --col){
-                        for(d = k; d < n; ++d){
+                        for(d = n-1; d < n; ++d){
                         
                         //n k property
                         if(alpha*(k-1) >= col){
@@ -75,11 +75,16 @@ int main(){
                             /* do not satisfy RC porperty */
                             continue;
                         }
-                        
+                        //add
+                        if((n-k)*beta < alpha){
+                        //    printf("(%d-%d)*%d < %d\n",n,k,beta,alpha);
+                            continue;
+                        }
+                        //add
                         printf("row:%2d,    col:%2d,    n:%2d,    k:%2d,    alpha:%2d,    beta:%2d,   d:%2d   ,B:%2d)",row, col, n, k, alpha, beta, d, bw);
                         fprintf(fp,"%6d%6d%6d%6d%6d%6d%6d%6d      ",row, col, n, k, alpha, beta, d, bw);
                         getchar();
-                        if(beta*(n-1) == alpha){
+                        if(beta*d == alpha){
                             printf("MBR\n");
                             fprintf(fp,"MBR\n");
                         }else{
