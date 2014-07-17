@@ -1,4 +1,4 @@
-NCLIB
+NCLIB(abandoned)
 ====
 
 * galois.*   a galois field arithmetic library in C/C++
